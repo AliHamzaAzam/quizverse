@@ -1,0 +1,12 @@
+# Root .gitignore
+node_modules/
+.env
+dist/
+.DS_Store
+
+# Frontend specific
+frontend/node_modules
+frontend/dist
+
+# Backend specific
+backend/node_modules

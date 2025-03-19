@@ -1,0 +1,13 @@
+{
+  "name": "quizverse",
+  "scripts": {
+    "dev": "concurrently \"npm:dev-frontend\" \"npm:dev-backend\"",
+    "dev-frontend": "cd frontend && npm run dev",
+    "dev-backend": "cd backend && npm run dev",
+    "build": "cd frontend && npm run build",
+    "start": "cd backend && npm start"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
