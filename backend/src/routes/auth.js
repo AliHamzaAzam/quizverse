@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import passport from 'passport';
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
+import { authenticate, isAdmin } from '../middleware/auth.js';
 import { z } from 'zod';
 
 const router = express.Router();
@@ -60,17 +61,50 @@ router.post('/login', async (req, res) => {
 router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
 
 router.get('/google/callback',
-    passport.authenticate('google', { failureRedirect: `${process.env.CLIENT_URL}/login`, session: true }),
+    passport.authenticate('google', {
+        failureRedirect: `${process.env.CLIENT_URL}/login`,
+        session: true
+    }),
     (req, res) => {
-        // ✅ Send HTML that closes popup and notifies frontend
+        const redirectUrl = req.user.role === 'admin'
+            ? process.env.ADMIN_URL
+            : process.env.CLIENT_URL;
+
         res.send(`
-            <script>
-                window.opener.postMessage('google-auth-success', '*');
-                window.close();
-            </script>
-        `);
+      <script>
+        window.opener.postMessage({
+          type: 'auth-success',
+          redirect: '${redirectUrl}'
+        }, '*');
+        window.close();
+      </script>
+    `);
     }
 );
+
+// admin-specific login endpoint
+router.post('/admin/login', async (req, res) => {
+    try {
+        const { email, password } = req.body;
+        const user = await User.findOne({ email, role: 'admin' });
+
+        if (!user || !(await bcrypt.compare(password, user.password))) {
+            return res.status(401).json({ message: 'Admin credentials invalid' });
+        }
+
+        const accessToken = generateToken(user, '15m');
+        const refreshToken = generateToken(user, '7d', true);
+
+        setAuthCookies(res, accessToken, refreshToken);
+        res.json({
+            user: safeUser(user),
+            redirect: process.env.ADMIN_URL
+        });
+
+    } catch (error) {
+        handleAuthError(error, res);
+    }
+});
 
 router.get('/me', (req, res) => {
     if (req.user) {
@@ -111,5 +145,28 @@ function safeUser(user) {
     const { password, ...safeData } = user.toObject();
     return safeData;
 }
+
+// Add admin registration route (protected)
+router.post('/admin/signup', authenticate, isAdmin, async (req, res) => {
+    try {
+        const { email, password } = signupSchema.parse(req.body);
+        const hashedPassword = await bcrypt.hash(password, 12);
+
+        const adminUser = await User.create({
+            email,
+            password: hashedPassword,
+            role: 'admin'
+        });
+
+        res.status(201).json({ user: safeUser(adminUser) });
+    } catch (error) {
+        handleAuthError(error, res);
+    }
+});
+
+// Add admin check endpoint
+router.get('/admin/check', authenticate, isAdmin, (req, res) => {
+    res.json({ isAdmin: true });
+});
 
 export default router;

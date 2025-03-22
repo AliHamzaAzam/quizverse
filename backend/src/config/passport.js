@@ -13,12 +13,20 @@ passport.use(new GoogleStrategy({
         let user = await User.findOne({ googleId: profile.id });
 
         if (!user) {
+            const isAdminEmail = process.env.ADMIN_EMAILS?.split(',').includes(profile.emails[0].value);
+
             user = await User.create({
                 googleId: profile.id,
                 email: profile.emails[0].value,
                 displayName: profile.displayName,
-                avatar: profile.photos[0].value
+                avatar: profile.photos[0].value,
+                role: isAdminEmail ? 'admin' : 'user'
             });
+        }
+
+        // Add admin URL to session for redirection
+        if (user.role === 'admin') {
+            profile._json.admin_redirect = process.env.ADMIN_URL;
         }
 
         done(null, user);
@@ -39,5 +47,3 @@ passport.deserializeUser(async (id, done) => {
         done(err, null);
     }
 });
-
-export default passport;

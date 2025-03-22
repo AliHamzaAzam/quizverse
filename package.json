@@ -1,10 +1,11 @@
 {
   "name": "quizverse",
   "scripts": {
-    "dev": "concurrently \"npm:dev-frontend\" \"npm:dev-backend\"",
-    "dev-frontend": "cd frontend && npm run dev",
+    "dev": "concurrently \"npm:dev-frontend-user\" \"npm:dev-frontend-admin\" \"npm:dev-backend\"",
+    "dev-frontend-user": "cd frontend-user && npm run dev",
+    "dev-frontend-admin": "cd frontend-admin && npm run dev",
     "dev-backend": "cd backend && npm run dev",
-    "build": "cd frontend && npm run build",
+    "build": "cd frontend-user && npm run build",
     "start": "cd backend && npm start"
   },
   "devDependencies": {

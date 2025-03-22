@@ -19,7 +19,7 @@ const routes = [
         name: 'Dashboard',
         component: Dashboard,
         meta: { requiresAuth: true }
-    }
+    },
 ]
 
 const router = createRouter({

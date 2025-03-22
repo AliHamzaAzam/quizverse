@@ -6,7 +6,12 @@ const userSchema = new mongoose.Schema({
     googleId: String,
     displayName: String,
     avatar: String,
-    refreshToken: String
+    refreshToken: String,
+    role: {
+        type: String,
+        enum: ['user', 'admin'],
+        default: 'user'
+    }
 }, { timestamps: true });
 
 export default mongoose.model('User', userSchema);
