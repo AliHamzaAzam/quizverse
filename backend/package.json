@@ -27,6 +27,8 @@
   },
   "devDependencies": {
     "express-session": "^1.18.1",
+    "multer": "^1.4.5-lts.2",
+    "multer-storage-cloudinary": "^4.0.0",
     "nodemon": "^3.0.3"
   }
 }

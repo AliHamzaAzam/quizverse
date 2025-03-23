@@ -11,7 +11,11 @@ const userSchema = new mongoose.Schema({
         type: String,
         enum: ['user', 'admin'],
         default: 'user'
-    }
+    },
+    firstName: String,
+    lastName: String,
+    age: Number,
+    accentColor: String
 }, { timestamps: true });
 
 export default mongoose.model('User', userSchema);

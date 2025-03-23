@@ -9,6 +9,14 @@ const router = useRouter();
 const isLogin = ref(true);
 const email = ref('');
 const password = ref('');
+const firstName = ref('');
+const lastName = ref('');
+const displayName = ref('');
+const age = ref('');
+const avatar = ref(null);
+const accentColor = ref('#e32500');
+const uploadStatus = ref('');
+const isUploading = ref(false);
 const error = computed(() => authStore.error);
 
 const toggleMode = () => {
@@ -16,11 +24,43 @@ const toggleMode = () => {
   authStore.clearError();
 };
 
+const handleFileChange = (event) => {
+  const file = event.target.files[0];
+  if (file) {
+    avatar.value = file;
+    uploadStatus.value = `Selected: ${file.name}`;
+  } else {
+    uploadStatus.value = '';
+  }
+};
+
 const handleSubmit = async () => {
   if (isLogin.value) {
     await authStore.login({ email: email.value, password: password.value });
   } else {
-    await authStore.signup({ email: email.value, password: password.value });
+    const formData = new FormData();
+    formData.append('email', email.value);
+    formData.append('password', password.value);
+    formData.append('firstName', firstName.value);
+    formData.append('lastName', lastName.value);
+    formData.append('displayName', displayName.value);
+    formData.append('age', age.value);
+    formData.append('accentColor', accentColor.value);
+    if (avatar.value) {
+      formData.append('avatar', avatar.value);
+    }
+
+    isUploading.value = true;
+    uploadStatus.value = 'Uploading...';
+
+    try {
+      await authStore.signup(formData);
+      uploadStatus.value = 'Upload and signup successful!';
+    } catch (err) {
+      uploadStatus.value = 'Upload failed. Please try again.';
+    } finally {
+      isUploading.value = false;
+    }
   }
 };
 
@@ -41,7 +81,6 @@ onMounted(() => {
         await authStore.fetchCurrentUser();
       }
 
-      // Then redirect to dashboard
       router.push('/dashboard');
     }
   });
@@ -62,10 +101,43 @@ onMounted(() => {
         <input type="password" v-model="password" required />
       </div>
 
+      <div v-if="!isLogin">
+        <div class="form-group">
+          <label for="firstName">First Name</label>
+          <input type="text" v-model="firstName" required />
+        </div>
+        <div class="form-group">
+          <label for="lastName">Last Name</label>
+          <input type="text" v-model="lastName" required />
+        </div>
+        <div class="form-group">
+          <label for="displayName">Display Name</label>
+          <input type="text" v-model="displayName" required />
+        </div>
+        <div class="form-group">
+          <label for="age">Age</label>
+          <input type="number" v-model="age" required />
+        </div>
+        <div class="form-group">
+          <label for="avatar">Profile Picture</label>
+          <input type="file" @change="handleFileChange" />
+          <div class="upload-status">{{ uploadStatus }}</div>
+        </div>
+        <div class="form-group">
+          <label for="accentColor">Accent Color</label>
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <input type="color" v-model="accentColor" />
+            <div :style="{ width: '30px', height: '30px', backgroundColor: accentColor, border: '1px solid #ccc', borderRadius: '4px' }"></div>
+          </div>
+        </div>
+      </div>
+
       <div v-if="error" class="error-message">{{ error }}</div>
 
       <div class="form-actions">
-        <button type="submit" class="btn-primary">{{ isLogin ? 'Login' : 'Sign Up' }}</button>
+        <button type="submit" class="btn-primary" :disabled="isUploading">
+          {{ isLogin ? 'Login' : isUploading ? 'Uploading...' : 'Sign Up' }}
+        </button>
         <button type="button" @click="toggleMode" class="btn-secondary">
           Switch to {{ isLogin ? 'Sign Up' : 'Login' }}
         </button>
@@ -77,6 +149,7 @@ onMounted(() => {
     </form>
   </div>
 </template>
+
 
 <style scoped>
 .auth-form-container {
@@ -161,5 +234,11 @@ button {
   border-radius: 4px;
   font-size: 0.9rem;
   margin-top: 0.5rem;
+}
+
+.upload-status {
+  font-size: 0.85rem;
+  color: #555;
+  margin-top: 0.3rem;
 }
 </style>

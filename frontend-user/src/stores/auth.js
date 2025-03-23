@@ -9,13 +9,28 @@ export const useAuthStore = defineStore('auth', () => {
     const error = ref(null);
     const isAuthenticated = computed(() => !!user.value);
 
-    const signup = async (credentials) => {
+    const signup = async (formData) => {
         try {
-            const { data } = await api.post('/api/auth/signup', credentials);
+            error.value = null;
+
+            const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/signup`, {
+                method: 'POST',
+                body: formData,
+                credentials: 'include'
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                error.value = data.message || 'Signup failed';
+                return;
+            }
+
             user.value = data.user;
             router.push('/dashboard');
         } catch (err) {
-            error.value = err.response?.data?.message || 'Signup failed';
+            error.value = 'An error occurred during signup';
+            console.error('Signup error:', err);
         }
     };
 

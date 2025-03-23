@@ -5,25 +5,43 @@ import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 import { authenticate, isAdmin } from '../middleware/auth.js';
 import { z } from 'zod';
+import multer from 'multer';
+import { storage } from '../utils/cloudinary.js';
+const upload = multer({ storage });
 
 const router = express.Router();
 
 // Validation schemas
 const signupSchema = z.object({
     email: z.string().email(),
-    password: z.string().min(8)
+    password: z.string().min(8),
+    firstName: z.string().min(1),
+    lastName: z.string().min(1),
+    displayName: z.string().min(1),
+    age: z.string().refine(val => !isNaN(parseInt(val)) && parseInt(val) > 0, { message: "Age must be a positive number" }),
+    accentColor: z.string().optional()
 });
 
 // Signup
-router.post('/signup', async (req, res) => {
+router.post('/signup', upload.single('avatar'), async (req, res) => {
     try {
-        const { email, password } = signupSchema.parse(req.body);
-        const hashedPassword = await bcrypt.hash(password, 12);
+        console.log('Uploaded file:', req.file); // Debug log to check avatar
+
+        const parsedData = signupSchema.parse(req.body);
+        const hashedPassword = await bcrypt.hash(parsedData.password, 12);
 
         const user = await User.create({
-            email,
-            password: hashedPassword
+            email: parsedData.email,
+            password: hashedPassword,
+            firstName: parsedData.firstName,
+            lastName: parsedData.lastName,
+            displayName: parsedData.displayName,
+            age: parseInt(parsedData.age),
+            accentColor: parsedData.accentColor,
+            avatar: req.file ? req.file.path : null // Store Cloudinary URL
         });
+
+        console.log('Created user:', user); // Debug log to verify saved fields
 
         const accessToken = generateToken(user, '15m');
         const refreshToken = generateToken(user, '7d', true);
@@ -168,5 +186,13 @@ router.post('/admin/signup', authenticate, isAdmin, async (req, res) => {
 router.get('/admin/check', authenticate, isAdmin, (req, res) => {
     res.json({ isAdmin: true });
 });
+
+function handleAuthError(error, res) {
+    if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: 'Validation failed', errors: error.errors });
+    }
+    console.error('Auth error:', error);
+    res.status(500).json({ message: 'Internal server error' });
+}
 
 export default router;

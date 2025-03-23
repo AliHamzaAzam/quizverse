@@ -11,29 +11,50 @@ const email = ref('');
 const password = ref('');
 const error = computed(() => authStore.error);
 
+const avatarFile = ref(null);
+const avatarPreview = ref('');
+
 const toggleMode = () => {
   isLogin.value = !isLogin.value;
-  // authStore.error = null;
+  if (isLogin.value) {
+    clearAvatarPreview();
+  }
+};
+
+const handleFileChange = (event) => {
+  const file = event.target.files[0];
+  if (file) {
+    avatarFile.value = file;
+    avatarPreview.value = URL.createObjectURL(file);
+  }
+};
+
+const clearAvatarPreview = () => {
+  avatarFile.value = null;
+  if (avatarPreview.value) {
+    URL.revokeObjectURL(avatarPreview.value);
+    avatarPreview.value = '';
+  }
 };
 
 const handleSubmit = async () => {
   if (isLogin.value) {
     await authStore.login({ email: email.value, password: password.value });
   } else {
-    await authStore.signup({ email: email.value, password: password.value });
+    const formData = new FormData();
+    formData.append('email', email.value);
+    formData.append('password', password.value);
+    if (avatarFile.value) {
+      formData.append('avatar', avatarFile.value);
+    }
+
+    await authStore.signup(formData);
   }
 };
 
 const handleGooglePopup = () => {
-  // const popup = window.open(
-  //     `${import.meta.env.VITE_BACKEND_URL}/api/auth/google`,
-  //     'Google Login',
-  //     'width=500,height=600'
-  // );
-
   window.addEventListener('message', (event) => {
     if (event.data === 'google-auth-success') {
-      // After popup closes, check if user is logged in
       authStore.checkAuth().then(() => {
         if (authStore.user) {
           router.push('/dashboard');
@@ -47,7 +68,7 @@ const handleGooglePopup = () => {
 <template>
   <div class="auth-form-container">
     <h2>{{ isLogin ? 'Login' : 'Sign Up' }}</h2>
-    <form @submit.prevent="handleSubmit" class="auth-form">
+    <form @submit.prevent="handleSubmit" class="auth-form" enctype="multipart/form-data">
       <div class="form-group">
         <label for="email">Email</label>
         <input type="email" v-model="email" required />
@@ -56,6 +77,26 @@ const handleGooglePopup = () => {
       <div class="form-group">
         <label for="password">Password</label>
         <input type="password" v-model="password" required />
+      </div>
+
+      <!-- Avatar upload field, only shown in signup mode -->
+      <div v-if="!isLogin" class="form-group avatar-upload">
+        <label>Profile Picture</label>
+        <div class="avatar-input-container">
+          <div v-if="avatarPreview" class="avatar-preview">
+            <img :src="avatarPreview" alt="Avatar preview" />
+            <button type="button" @click="clearAvatarPreview" class="clear-avatar">×</button>
+          </div>
+          <label v-else class="upload-label">
+            <input
+                type="file"
+                accept="image/*"
+                @change="handleFileChange"
+                class="file-input"
+            />
+            <span>Choose file</span>
+          </label>
+        </div>
       </div>
 
       <div v-if="error" class="error-message">{{ error }}</div>
@@ -75,87 +116,60 @@ const handleGooglePopup = () => {
 </template>
 
 <style scoped>
-.auth-form-container {
-  max-width: 400px;
-  margin: 4rem auto;
-  padding: 2rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+
+.avatar-upload {
+  margin-bottom: 1rem;
 }
 
-.auth-form {
+.avatar-input-container {
   display: flex;
-  flex-direction: column;
-  gap: 1rem;
+  align-items: center;
 }
 
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
+.avatar-preview {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  overflow: hidden;
+  margin-right: 1rem;
 }
 
-input {
-  padding: 0.75rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 1rem;
+.avatar-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
-.form-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  margin-top: 1rem;
-}
-
-button {
-  padding: 0.75rem 1rem;
-  border: none;
-  border-radius: 4px;
-  font-size: 1rem;
-  cursor: pointer;
-}
-
-.btn-primary {
-  background-color: #4361ee;
+.clear-avatar {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background: rgba(0, 0, 0, 0.5);
   color: white;
-}
-
-.btn-primary:hover {
-  background-color: #3a56d4;
-}
-
-.btn-secondary {
-  background-color: transparent;
-  border: 1px solid #ddd;
-}
-
-.btn-secondary:hover {
-  background-color: #f5f5f5;
-}
-
-.btn-google {
+  border: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
-  border: 1px solid #ddd;
-  background-color: #fff;
-  cursor: pointer;
-  padding: 0.7rem;
 }
 
-.btn-google:hover {
-  background-color: #f5f5f5;
-}
-
-.error-message {
-  padding: 0.75rem;
-  background-color: #ffebee;
-  color: #c62828;
+.upload-label {
+  display: inline-block;
+  padding: 8px 16px;
+  background-color: #f0f0f0;
   border-radius: 4px;
-  font-size: 0.9rem;
-  margin-top: 0.5rem;
+  cursor: pointer;
+}
+
+.upload-label:hover {
+  background-color: #e0e0e0;
+}
+
+.file-input {
+  display: none;
 }
 </style>
