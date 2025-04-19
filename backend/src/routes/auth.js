@@ -132,7 +132,6 @@ router.get('/me', (req, res) => {
     }
 });
 
-
 // Helper functions
 function generateToken(user, expiresIn, isRefresh = false) {
     return jwt.sign(
@@ -146,7 +145,7 @@ function setAuthCookies(res, accessToken, refreshToken) {
     res.cookie('accessToken', accessToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'Strict',
+        sameSite: 'Lax', // Changed from 'Strict' to 'Lax'
         maxAge: 15 * 60 * 1000 // 15 minutes
     });
 

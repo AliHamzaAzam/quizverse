@@ -84,6 +84,26 @@ export const useAuthStore = defineStore('auth', () => {
         }
     };
 
+    const updateProfile = async (formData) => {
+        try {
+            // Assuming PATCH /api/profile is your update endpoint
+            const { data } = await api.patch('/api/profile', formData, {
+                headers: {
+                    // Important for file uploads with FormData
+                    'Content-Type': 'multipart/form-data'
+                }
+            });
+            // Update the local user state with the updated profile data
+            user.value = data.user;
+            error.value = null; // Clear previous errors
+        } catch (err) {
+            console.error('Profile update error:', err);
+            error.value = err.response?.data?.message || 'Failed to update profile';
+            // Re-throw the error so the component can catch it if needed
+            throw new Error(error.value);
+        }
+    };
+
     return {
         user,
         error,
@@ -94,6 +114,7 @@ export const useAuthStore = defineStore('auth', () => {
         logout,
         clearError,
         setUser,
-        fetchCurrentUser
+        fetchCurrentUser,
+        updateProfile // <-- Add updateProfile here
     };
 });
