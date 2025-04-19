@@ -41,10 +41,8 @@ const formatDate = (dateString) => {
       <div v-for="attempt in attempts" :key="attempt._id" class="attempt-card">
         <h2>{{ attempt.quiz?.title || 'Quiz Title Missing' }}</h2>
         <p class="score">Score: {{ attempt.score }} / {{ attempt.quiz?.questions?.length || 'N/A' }}</p>
-        <p class="date">Completed: {{ formatDate(attempt.completedAt) }}</p>
-        <!-- Optional: Link to view the specific quiz or detailed results -->
+        <p class="date">Completed: {{ formatDate(attempt.createdAt) }}</p> 
         <router-link v-if="attempt.quiz?._id" :to="`/quizzes/${attempt.quiz._id}`" class="btn btn-details">View Quiz</router-link>
-        <!-- <router-link :to="`/attempts/${attempt._id}`" class="btn btn-details">View Details</router-link> -->
       </div>
     </div>
 

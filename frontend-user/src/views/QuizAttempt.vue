@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import api from '@/utils/axios';
 
@@ -16,6 +16,8 @@ const isLoading = ref(true);
 const error = ref(null);
 const submitError = ref(null);
 const isSubmitting = ref(false);
+const timeLeft = ref(null); // Time left in seconds
+const timerInterval = ref(null); // To store interval ID
 
 const fetchQuiz = async () => {
   isLoading.value = true;
@@ -27,6 +29,10 @@ const fetchQuiz = async () => {
     quiz.value.questions.forEach(q => {
       userAnswers.value[q._id] = null; // Initialize with null
     });
+    // Start timer if timeLimit is set
+    if (quiz.value.timeLimit && quiz.value.timeLimit > 0) {
+      startTimer(quiz.value.timeLimit * 60); // Convert minutes to seconds
+    }
   } catch (err) {
     console.error('Failed to fetch quiz:', err);
     error.value = 'Could not load the quiz. Please try again later.';
@@ -62,16 +68,58 @@ const prevQuestion = () => {
   }
 };
 
-const handleSubmit = async () => {
-  // Check if all questions have been answered
-  const unansweredQuestions = Object.values(userAnswers.value).some(answer => answer === null);
-  if (unansweredQuestions) {
-      submitError.value = 'Please answer all questions before submitting.';
-      return; // Stop submission
+const startTimer = (durationInSeconds) => {
+  timeLeft.value = durationInSeconds;
+  timerInterval.value = setInterval(() => {
+    if (timeLeft.value > 0) {
+      timeLeft.value--;
+    } else {
+      clearInterval(timerInterval.value);
+      timerInterval.value = null;
+      // Auto-submit when time runs out
+      if (!isSubmitted.value) {
+          console.log('Time ran out, auto-submitting...');
+          handleSubmit(true); // Pass flag to indicate auto-submission
+      }
+    }
+  }, 1000);
+};
+
+// Format time left as MM:SS
+const formattedTimeLeft = computed(() => {
+  if (timeLeft.value === null) return '';
+  const minutes = Math.floor(timeLeft.value / 60);
+  const seconds = timeLeft.value % 60;
+  return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+});
+
+// Clear timer on component unmount
+onUnmounted(() => {
+  if (timerInterval.value) {
+    clearInterval(timerInterval.value);
+  }
+});
+
+const handleSubmit = async (isAutoSubmit = false) => {
+  // Check if all questions have been answered, unless it's an auto-submit
+  if (!isAutoSubmit) {
+      const unansweredQuestions = Object.values(userAnswers.value).some(answer => answer === null);
+      if (unansweredQuestions) {
+          submitError.value = 'Please answer all questions before submitting.';
+          return; // Stop manual submission
+      }
+  } else {
+      // For auto-submit, maybe mark unanswered questions or handle differently if needed
+      console.log('Auto-submitting with potentially unanswered questions.');
   }
 
   isSubmitting.value = true;
   submitError.value = null;
+  // Stop the timer
+  if (timerInterval.value) {
+    clearInterval(timerInterval.value);
+    timerInterval.value = null;
+  }
 
   // Prepare submission data
   const answersPayload = Object.entries(userAnswers.value).map(([questionId, selectedOptionIndex]) => ({
@@ -116,6 +164,10 @@ const getOptionClass = (questionId, optionIndex) => {
 
     <div v-if="!isLoading && quiz && !isSubmitted">
       <h1>{{ quiz.title }}</h1>
+      <!-- Display Timer -->
+      <div v-if="timeLeft !== null" class="timer-display">
+        Time Left: {{ formattedTimeLeft }}
+      </div>
       <p class="progress">Question {{ currentQuestionIndex + 1 }} of {{ quiz.questions.length }}</p>
 
       <div v-if="currentQuestion" class="question-card">
@@ -358,6 +410,18 @@ h1 {
 }
 .submit-error {
     margin-top: 1rem;
+}
+
+.timer-display {
+  text-align: center;
+  font-size: 1.4rem;
+  font-weight: bold;
+  color: #dc3545; /* Bootstrap danger color */
+  margin-bottom: 1.5rem;
+  padding: 0.5rem;
+  background-color: #f8d7da;
+  border: 1px solid #f5c2c7;
+  border-radius: 4px;
 }
 
 </style>

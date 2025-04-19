@@ -12,6 +12,7 @@ const quizData = reactive({
   title: '',
   description: '',
   questions: [],
+  timeLimit: null, // Add timeLimit field
 });
 
 const isLoading = ref(false);
@@ -28,6 +29,7 @@ onMounted(async () => {
       quizData.description = data.description;
       // Ensure questions have a unique key for v-for if needed (using index is okay here)
       quizData.questions = data.questions.map(q => ({ ...q }));
+      quizData.timeLimit = data.timeLimit || null; // Load existing timeLimit
     } catch (err) {
       console.error('Failed to fetch quiz for editing:', err);
       error.value = 'Could not load quiz data for editing.';
@@ -118,11 +120,14 @@ const handleSubmit = async () => {
             text: q.text,
             options: q.options,
             correctOption: q.correctOptionIndex // Rename field here
-        }))
+        })),
+        // Correctly access timeLimit from reactive object
+        timeLimit: quizData.timeLimit ? parseInt(quizData.timeLimit, 10) : null 
     };
 
     if (isEditMode.value) {
-      response = await api.put(`/api/quizzes/${quizId}`, payload);
+      // Use PATCH instead of PUT to match the backend route
+      response = await api.patch(`/api/quizzes/${quizId}`, payload);
       successMessage.value = 'Quiz updated successfully!';
     } else {
       response = await api.post('/api/quizzes', payload);
@@ -137,7 +142,8 @@ const handleSubmit = async () => {
 
   } catch (err) {
     console.error('Failed to save quiz:', err);
-    error.value = err.response?.data?.message || 'Failed to save the quiz.';
+    // Provide more specific error if available from backend
+    error.value = err.response?.data?.message || `Failed to ${isEditMode.value ? 'update' : 'create'} quiz.`;
   } finally {
     isLoading.value = false;
   }
@@ -157,6 +163,11 @@ const handleSubmit = async () => {
       <div class="form-group">
         <label for="description">Description (Optional)</label>
         <textarea id="description" v-model="quizData.description"></textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="timeLimit">Time Limit (minutes, 0 for no limit)</label>
+        <input type="number" id="timeLimit" v-model.number="quizData.timeLimit" min="0">
       </div>
 
       <h2>Questions</h2>
