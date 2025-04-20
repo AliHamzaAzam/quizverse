@@ -22,7 +22,7 @@ router.post('/:quizId', async (req, res) => {
     answers,
     score
   });
-  res.status(201).json(at);
+  res.status(201).json({ score: at.score, attemptId: at._id }); // Return score and attemptId
 });
 
 // GET my attempts

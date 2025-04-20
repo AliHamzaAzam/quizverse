@@ -2,6 +2,7 @@
 import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import api from '@/utils/axios';
+import FeedbackForm from '@/components/FeedbackForm.vue'; // Import the new component
 
 const route = useRoute();
 const router = useRouter();
@@ -18,6 +19,7 @@ const submitError = ref(null);
 const isSubmitting = ref(false);
 const timeLeft = ref(null); // Time left in seconds
 const timerInterval = ref(null); // To store interval ID
+const attemptId = ref(null); // Add a ref to store the attempt ID after submission
 
 const fetchQuiz = async () => {
   isLoading.value = true;
@@ -130,6 +132,7 @@ const handleSubmit = async (isAutoSubmit = false) => {
   try {
     const { data } = await api.post(`/api/attempts/${quizId}`, { answers: answersPayload });
     score.value = data.score;
+    attemptId.value = data.attemptId; // Store the attempt ID from the response
     isSubmitted.value = true;
     // Optionally navigate to results or My Attempts page
     // router.push({ name: 'MyAttempts' });
@@ -219,6 +222,10 @@ const getOptionClass = (questionId, optionIndex) => {
         <router-link to="/quizzes" class="btn btn-primary">Back to Quizzes</router-link>
         <router-link to="/my-attempts" class="btn btn-info">View My Attempts</router-link>
       </div>
+
+      <!-- Add Feedback Form -->
+      <FeedbackForm v-if="attemptId" :attempt-id="attemptId" />
+
     </div>
 
   </div>

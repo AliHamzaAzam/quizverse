@@ -14,6 +14,7 @@ import quizRoutes from './routes/quiz.js';
 import attemptRoutes from './routes/attempt.js';
 import leaderboardRoutes from './routes/leaderboard.js';
 import reportRoutes from './routes/report.js'; // Import report routes
+import feedbackRoutes from './routes/feedback.js'; // Import feedback routes
 
 import './config/passport.js';
 import { authenticate, isAdmin } from './middleware/auth.js';
@@ -82,7 +83,8 @@ app.use('/api/profile', authenticate, profileRoutes);
 app.use('/api/quizzes', authenticate, quizRoutes);
 app.use('/api/attempts', authenticate, attemptRoutes);
 app.use('/api/leaderboard', authenticate, leaderboardRoutes);
-app.use('/api/reports', reportRoutes); // Add report routes
+app.use('/api/reports', authenticate, reportRoutes); // Protect report routes
+app.use('/api/feedback', authenticate, feedbackRoutes); // Protect feedback routes
 
 const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {
