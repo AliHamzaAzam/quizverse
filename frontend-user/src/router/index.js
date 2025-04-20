@@ -9,6 +9,7 @@ import QuizDetail from '@/views/QuizDetail.vue' // Added
 import QuizAttempt from '@/views/QuizAttempt.vue' // Added
 import MyAttempts from '@/views/MyAttempts.vue' // Added
 import QuizForm from '@/views/QuizForm.vue' // Added
+import MyQuizzes from '@/views/MyQuizzes.vue' // Import the new view
 
 const routes = [
     {
@@ -71,6 +72,12 @@ const routes = [
         path: '/my-attempts', // Route for viewing user's own attempts
         name: 'MyAttempts',
         component: MyAttempts,
+        meta: { requiresAuth: true }
+    },
+    {
+        path: '/my-quizzes', // Add route for My Quizzes
+        name: 'MyQuizzes',
+        component: MyQuizzes,
         meta: { requiresAuth: true }
     },
 ]

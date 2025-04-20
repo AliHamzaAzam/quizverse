@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue'; // Import computed
 import api from '@/utils/axios'; // Use the configured axios instance
 import { useAuthStore } from '@/stores/auth'; // Import auth store
 
@@ -7,6 +7,8 @@ const quizzes = ref([]);
 const isLoading = ref(true);
 const error = ref(null);
 const auth = useAuthStore(); // Get auth store instance
+const searchTerm = ref(''); // Add state for search term
+const displayedQuizzes = ref([]); // Ref to hold quizzes actually displayed
 
 const fetchQuizzes = async () => {
   isLoading.value = true;
@@ -14,6 +16,7 @@ const fetchQuizzes = async () => {
   try {
     const { data } = await api.get('/api/quizzes');
     quizzes.value = data;
+    performSearch(); // Initialize displayed quizzes
   } catch (err) {
     error.value = 'Failed to load quizzes.';
     console.error(err);
@@ -27,6 +30,29 @@ const isCreator = (quiz) => {
     return auth.user && quiz.createdBy && auth.user._id === quiz.createdBy._id;
 };
 
+// Function to filter quizzes based on search term and update displayedQuizzes
+const performSearch = () => {
+  if (!searchTerm.value) {
+    displayedQuizzes.value = quizzes.value; // Show all if search is empty
+    return;
+  }
+  const lowerSearchTerm = searchTerm.value.toLowerCase();
+  // Ensure quiz.code exists before trying to access its properties
+  displayedQuizzes.value = quizzes.value.filter(quiz =>
+    quiz.title.toLowerCase().includes(lowerSearchTerm) ||
+    (quiz.code && quiz.code.toLowerCase().includes(lowerSearchTerm))
+  );
+};
+
+
+// Trigger search on Enter key press in the input field
+const handleSearchInputKeydown = (event) => {
+  if (event.key === 'Enter') {
+    performSearch();
+  }
+};
+
+
 onMounted(fetchQuizzes);
 </script>
 
@@ -34,8 +60,20 @@ onMounted(fetchQuizzes);
   <div class="quiz-list-container">
     <h1>Available Quizzes</h1>
 
-    <!-- Add Quiz Button -->
-    <div class="add-quiz-section">
+    <!-- Search and Add Quiz Section -->
+    <div class="controls-section">
+       <!-- Search Input and Button -->
+       <div class="search-container">
+         <input
+           type="text"
+           v-model="searchTerm"
+           placeholder="Search by title or code..."
+           class="search-input"
+           @keydown="handleSearchInputKeydown" 
+         />
+         <button @click="performSearch" class="btn-search">Search</button> <!-- Add search button -->
+       </div>
+       <!-- Add Quiz Button -->
        <router-link to="/quizzes/new" class="btn-add-quiz">Create New Quiz</router-link>
     </div>
 
@@ -43,9 +81,11 @@ onMounted(fetchQuizzes);
     <div v-if="isLoading" class="loading">Loading quizzes...</div>
     <div v-if="error" class="error-message">{{ error }}</div>
 
-    <ul v-if="!isLoading && !error && quizzes.length > 0" class="quiz-list">
-      <li v-for="quiz in quizzes" :key="quiz._id" class="quiz-item">
+    <!-- Use displayedQuizzes in the v-for loop -->
+    <ul v-if="!isLoading && !error && displayedQuizzes.length > 0" class="quiz-list">
+      <li v-for="quiz in displayedQuizzes" :key="quiz._id" class="quiz-item">
         <h2>{{ quiz.title }}</h2>
+        <p class="quiz-code">Code: <strong>{{ quiz.code }}</strong></p> <!-- Display quiz code -->
         <p>{{ quiz.description }}</p>
         <p class="created-by">Created by: {{ quiz.createdBy?.displayName || 'Unknown' }}</p>
         <div class="quiz-actions">
@@ -57,7 +97,11 @@ onMounted(fetchQuizzes);
         </div>
       </li>
     </ul>
-     <div v-if="!isLoading && !error && quizzes.length === 0" class="no-quizzes">
+     <!-- Update message for no results -->
+     <div v-if="!isLoading && !error && displayedQuizzes.length === 0 && searchTerm" class="no-quizzes">
+        No quizzes found matching "{{ searchTerm }}". <button @click="searchTerm = ''; performSearch();" class="btn-clear-search">Clear Search</button>
+    </div>
+     <div v-else-if="!isLoading && !error && quizzes.length === 0" class="no-quizzes">
         No quizzes available yet. Why not <router-link to="/quizzes/new">create one</router-link>?
     </div>
   </div>
@@ -76,6 +120,49 @@ h1 {
     color: #333;
 }
 
+.controls-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    flex-wrap: wrap; /* Allow wrapping on smaller screens */
+    gap: 1rem; /* Add gap between items */
+}
+
+.search-container {
+    flex-grow: 1; /* Allow search bar to take available space */
+    min-width: 250px; /* Minimum width for the search bar */
+    display: flex; /* Use flexbox to align input and button */
+    gap: 0.5rem; /* Add space between input and button */
+}
+
+.search-input {
+    width: 100%; /* Make input take full width of its container */
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box; /* Include padding and border in element's total width */
+    flex-grow: 1; /* Allow input to grow */
+}
+
+.btn-search {
+    padding: 0.75rem 1rem;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background-color 0.2s;
+    white-space: nowrap;
+}
+
+.btn-search:hover {
+    background-color: #0056b3;
+}
+
+
 .add-quiz-section {
     margin-bottom: 2rem;
     text-align: right;
@@ -91,6 +178,7 @@ h1 {
     transition: background-color 0.2s;
     border: none;
     cursor: pointer;
+    white-space: nowrap; /* Prevent button text from wrapping */
 }
 
 .btn-add-quiz:hover {
@@ -119,6 +207,17 @@ h1 {
     text-decoration: underline;
 }
 
+.no-quizzes button.btn-clear-search {
+    background: none;
+    border: none;
+    color: #007bff;
+    text-decoration: underline;
+    cursor: pointer;
+    padding: 0;
+    font-size: inherit;
+}
+
+
 .quiz-list {
   list-style: none;
   padding: 0;
@@ -144,9 +243,24 @@ h1 {
 
 .quiz-item h2 {
   margin-top: 0;
-  margin-bottom: 0.75rem; /* Increased margin */
+  margin-bottom: 0.5rem; /* Adjust margin */
   color: #333;
   font-size: 1.3rem; /* Slightly larger title */
+}
+
+.quiz-code {
+    font-size: 0.95rem;
+    color: #555;
+    margin-bottom: 0.75rem; /* Add margin below code */
+    background-color: #f8f9fa;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    display: inline-block; /* Make background fit content */
+}
+
+.quiz-code strong {
+    color: #007bff; /* Highlight the code */
+    font-family: monospace; /* Use monospace font for code */
 }
 
 .quiz-item p {

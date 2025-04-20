@@ -40,6 +40,46 @@ const isCreator = computed(() => {
     return auth.user && quiz.value && quiz.value.createdBy && auth.user._id === quiz.value.createdBy._id;
 });
 
+const showReportModal = ref(false);
+const reportReason = ref('');
+const reportError = ref(null);
+const reportSuccess = ref(false);
+
+const openReportModal = () => {
+  reportReason.value = '';
+  reportError.value = null;
+  reportSuccess.value = false;
+  showReportModal.value = true;
+};
+
+const closeReportModal = () => {
+  showReportModal.value = false;
+};
+
+const submitReport = async () => {
+  if (!reportReason.value.trim()) {
+    reportError.value = 'Please provide a reason for reporting.';
+    return;
+  }
+  reportError.value = null;
+  reportSuccess.value = false;
+
+  try {
+    await api.post('/api/reports', {
+      quizId: quizId,
+      reason: reportReason.value
+    });
+    reportSuccess.value = true;
+    // Optionally close modal after a delay or keep it open with success message
+    setTimeout(() => {
+        closeReportModal();
+    }, 2000); // Close after 2 seconds
+  } catch (err) {
+    console.error('Failed to submit report:', err);
+    reportError.value = err.response?.data?.message || 'Failed to submit report. You might have already reported this quiz.';
+  }
+};
+
 onMounted(async () => {
   isLoading.value = true;
   error.value = null;
@@ -64,10 +104,12 @@ const formatDate = (dateString) => {
       <h1>{{ quiz.title }}</h1>
       <p class="description">{{ quiz.description }}</p>
       <p class="created-by">Created by: {{ quiz.createdBy?.displayName || 'Unknown' }}</p>
+      <p class="quiz-code-display">Code: <code>{{ quiz.code }}</code></p> <!-- Display quiz code -->
 
       <div class="actions">
         <router-link :to="`/quizzes/${quiz._id}/attempt`" class="btn btn-primary">Take Quiz</router-link>
         <router-link v-if="isCreator" :to="`/quizzes/${quiz._id}/edit`" class="btn btn-secondary">Edit Quiz</router-link>
+        <button @click="openReportModal" class="btn btn-danger">Report Quiz</button> <!-- Report Button -->
         <router-link :to="`/quizzes`" class="btn btn-link">Back to Quizzes</router-link>
       </div>
 
@@ -102,6 +144,32 @@ const formatDate = (dateString) => {
         <p>Quiz not found.</p>
          <router-link :to="`/quizzes`" class="btn btn-link">Back to Quizzes</router-link>
     </div>
+
+    <!-- Report Modal -->
+    <div v-if="showReportModal" class="modal-overlay" @click.self="closeReportModal">
+      <div class="modal-content">
+        <h2>Report Quiz: {{ quiz?.title }}</h2>
+        <form @submit.prevent="submitReport">
+          <div class="form-group">
+            <label for="reportReason">Reason for reporting:</label>
+            <textarea
+              id="reportReason"
+              v-model="reportReason"
+              rows="4"
+              required
+              placeholder="Please describe why this quiz is inappropriate (e.g., offensive content, incorrect information, spam)."
+            ></textarea>
+          </div>
+          <div v-if="reportError" class="error-message modal-error">{{ reportError }}</div>
+          <div v-if="reportSuccess" class="success-message modal-success">Report submitted successfully. Thank you.</div>
+          <div class="modal-actions">
+            <button type="button" @click="closeReportModal" class="btn btn-secondary">Cancel</button>
+            <button type="submit" class="btn btn-danger" :disabled="reportSuccess">Submit Report</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
   </div>
 </template>
 
@@ -182,6 +250,14 @@ h1 {
     color: #3a56d4;
 }
 
+.btn-danger {
+  background-color: #e63946;
+  color: white;
+}
+.btn-danger:hover {
+  background-color: #d62828;
+}
+
 .leaderboard-section {
   margin-top: 2rem;
   border-top: 1px solid #eee;
@@ -237,5 +313,96 @@ h1 {
   background-color: #ffebee;
   border: 1px solid #ffcdd2;
   border-radius: 4px;
+}
+
+.quiz-code-display {
+    text-align: center;
+    margin-bottom: 1rem;
+    font-size: 1rem;
+    color: #555;
+}
+
+.quiz-code-display code {
+    background-color: #e9ecef;
+    padding: 0.2em 0.5em;
+    border-radius: 4px;
+    font-family: monospace;
+    color: #007bff;
+}
+
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background-color: #fff;
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+  width: 90%;
+  max-width: 500px;
+}
+
+.modal-content h2 {
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+.form-group textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 1rem;
+  box-sizing: border-box;
+  resize: vertical;
+}
+
+.modal-actions {
+  margin-top: 1.5rem;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+.modal-error,
+.modal-success {
+    margin-top: 1rem;
+    padding: 0.75rem;
+    border-radius: 4px;
+    text-align: center;
+}
+
+.modal-error {
+    background-color: #ffebee;
+    color: #c62828;
+    border: 1px solid #ffcdd2;
+}
+
+.modal-success {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+    border: 1px solid #c8e6c9;
 }
 </style>

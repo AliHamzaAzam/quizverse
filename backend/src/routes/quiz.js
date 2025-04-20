@@ -21,14 +21,22 @@ router.post('/', async (req, res) => {
 
     let uniqueCode = '';
     let codeExists = true;
+    let attempts = 0; // Prevent infinite loop in rare cases
     // Ensure the generated code is unique
-    while (codeExists) {
+    while (codeExists && attempts < 10) { // Limit attempts
       uniqueCode = generateCode(4);
       const existingQuiz = await Quiz.findOne({ code: uniqueCode });
       if (!existingQuiz) {
         codeExists = false;
       }
+      attempts++;
     }
+
+    if (codeExists) {
+        // If we still couldn't find a unique code after several attempts
+        return res.status(500).json({ message: 'Failed to generate a unique quiz code. Please try again.' });
+    }
+
 
     const q = await Quiz.create({
       title,
@@ -54,6 +62,45 @@ router.get('/', async (req, res) => {
     .select('-questions.correctOption')
     .populate('createdBy','displayName');
   res.json(list);
+});
+
+// Read quizzes created by the current user
+router.get('/my-quizzes', async (req, res) => {
+  if (!req.userId) {
+    return res.status(401).json({ message: 'Authentication required' });
+  }
+  try {
+    const userQuizzes = await Quiz.find({ createdBy: req.userId })
+                                  .select('-questions.correctOption') // Optionally hide answers even for owner in this list view
+                                  .sort({ createdAt: -1 }); // Sort by newest first
+    res.json(userQuizzes);
+  } catch (error) {
+    console.error('Error fetching user quizzes:', error);
+    res.status(500).json({ message: 'Failed to fetch your quizzes' });
+  }
+});
+
+// Read one quiz by CODE (hide answers for non-owner/admin)
+router.get('/code/:code', async (req, res) => {
+  // Find quiz by code, case-sensitive search
+  const q = await Quiz.findOne({ code: req.params.code }).populate('createdBy', 'displayName');
+  if (!q) return res.status(404).json({ message: 'Quiz not found with this code' });
+
+  // Check if the requester is the owner or an admin
+  const isOwner = q.createdBy && req.userId && q.createdBy._id.equals(req.userId);
+  const isAdmin = req.user && req.user.role === 'admin';
+
+  if (isOwner || isAdmin) {
+    // Owner or admin gets the full quiz details
+    return res.json(q);
+  }
+
+  // For other users, hide correctOption
+  const safe = q.toObject();
+  if (safe.questions && Array.isArray(safe.questions)) {
+      safe.questions.forEach(x => delete x.correctOption);
+  }
+  res.json(safe);
 });
 
 // Read one quiz (with answers for admin/owner, else hide)
