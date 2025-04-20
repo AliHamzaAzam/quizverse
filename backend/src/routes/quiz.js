@@ -1,5 +1,6 @@
 import express from 'express';
 import Quiz from '../models/Quiz.js';
+import Feedback from '../models/Feedback.js'; // Import Feedback model
 
 const router = express.Router();
 
@@ -77,6 +78,39 @@ router.get('/my-quizzes', async (req, res) => {
   } catch (error) {
     console.error('Error fetching user quizzes:', error);
     res.status(500).json({ message: 'Failed to fetch your quizzes' });
+  }
+});
+
+// GET feedback for a specific quiz (only owner/admin)
+router.get('/:quizId/feedback', async (req, res) => {
+  try {
+    const quizId = req.params.quizId;
+    const userId = req.userId;
+    const userRole = req.user?.role; // Assuming role is populated in auth middleware
+
+    const quiz = await Quiz.findById(quizId);
+    if (!quiz) {
+      return res.status(404).json({ message: 'Quiz not found' });
+    }
+
+    // Check if the user is the owner or an admin
+    const isOwner = quiz.createdBy.equals(userId);
+    const isAdmin = userRole === 'admin';
+
+    if (!isOwner && !isAdmin) {
+      return res.status(403).json({ message: 'You are not authorized to view feedback for this quiz.' });
+    }
+
+    // Fetch feedback, populate user display name
+    const feedbackList = await Feedback.find({ quiz: quizId })
+                                     .populate('user', 'displayName') // Populate user's display name
+                                     .sort({ createdAt: -1 }); // Sort by newest first
+
+    res.json(feedbackList);
+
+  } catch (error) {
+    console.error('Error fetching feedback for quiz:', error);
+    res.status(500).json({ message: 'Failed to fetch feedback.' });
   }
 });
 
