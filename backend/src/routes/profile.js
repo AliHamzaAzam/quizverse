@@ -49,4 +49,73 @@ router.patch('/', upload.single('avatar'), async (req, res) => {
   }
 });
 
+// --- Bookmark Routes ---
+
+// GET bookmarked quizzes
+router.get('/bookmarks', async (req, res) => {
+  try {
+    const user = await User.findById(req.userId).populate({
+        path: 'bookmarkedQuizzes',
+        select: 'title description createdBy', // Select fields you want from Quiz
+        populate: { path: 'createdBy', select: 'displayName' } // Populate creator info
+    });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found.' });
+    }
+    res.json(user.bookmarkedQuizzes);
+  } catch (error) {
+    console.error("Error fetching bookmarked quizzes:", error);
+    res.status(500).json({ message: 'Failed to fetch bookmarks.' });
+  }
+});
+
+// POST add a bookmark
+router.post('/bookmarks/:quizId', async (req, res) => {
+  try {
+    const { quizId } = req.params;
+    // Add quizId to the bookmarkedQuizzes array if it's not already there
+    const updatedUser = await User.findByIdAndUpdate(
+      req.userId,
+      { $addToSet: { bookmarkedQuizzes: quizId } }, // $addToSet prevents duplicates
+      { new: true }
+    ).select('bookmarkedQuizzes');
+
+    if (!updatedUser) {
+      return res.status(404).json({ message: 'User not found.' });
+    }
+    res.status(200).json({ message: 'Quiz bookmarked successfully.', bookmarkedQuizzes: updatedUser.bookmarkedQuizzes });
+  } catch (error) {
+    console.error("Error adding bookmark:", error);
+    // Handle potential CastError if quizId is invalid format
+    if (error.name === 'CastError') {
+        return res.status(400).json({ message: 'Invalid Quiz ID format.' });
+    }
+    res.status(500).json({ message: 'Failed to add bookmark.' });
+  }
+});
+
+// DELETE remove a bookmark
+router.delete('/bookmarks/:quizId', async (req, res) => {
+  try {
+    const { quizId } = req.params;
+    // Remove quizId from the bookmarkedQuizzes array
+    const updatedUser = await User.findByIdAndUpdate(
+      req.userId,
+      { $pull: { bookmarkedQuizzes: quizId } },
+      { new: true }
+    ).select('bookmarkedQuizzes');
+
+    if (!updatedUser) {
+      return res.status(404).json({ message: 'User not found.' });
+    }
+    res.status(200).json({ message: 'Bookmark removed successfully.', bookmarkedQuizzes: updatedUser.bookmarkedQuizzes });
+  } catch (error) {
+    console.error("Error removing bookmark:", error);
+    if (error.name === 'CastError') {
+        return res.status(400).json({ message: 'Invalid Quiz ID format.' });
+    }
+    res.status(500).json({ message: 'Failed to remove bookmark.' });
+  }
+});
+
 export default router;

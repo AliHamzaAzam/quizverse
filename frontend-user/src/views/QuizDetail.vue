@@ -13,6 +13,7 @@ const leaderboard = ref([]);
 const isLoading = ref(true);
 const error = ref(null);
 const quizId = route.params.id;
+const actionError = ref(null); // Ref for bookmark action errors
 
 const fetchQuizDetails = async () => {
   try {
@@ -39,6 +40,28 @@ const fetchLeaderboard = async () => {
 const isCreator = computed(() => {
     return auth.user && quiz.value && quiz.value.createdBy && auth.user._id === quiz.value.createdBy._id;
 });
+
+// Computed property to check if the current quiz is bookmarked
+const isBookmarked = computed(() => {
+    return auth.bookmarkedQuizIds.includes(quizId);
+});
+
+// Function to toggle bookmark status
+const toggleBookmark = async () => {
+    actionError.value = null; // Clear previous error
+    try {
+        if (isBookmarked.value) {
+            await auth.removeBookmark(quizId);
+        } else {
+            await auth.addBookmark(quizId);
+        }
+    } catch (err) {
+        console.error('Failed to toggle bookmark:', err);
+        actionError.value = err.message || 'Could not update bookmark.';
+        // Clear error after some time
+        setTimeout(() => { actionError.value = null; }, 3000);
+    }
+};
 
 const showReportModal = ref(false);
 const reportReason = ref('');
@@ -83,6 +106,9 @@ const submitReport = async () => {
 onMounted(async () => {
   isLoading.value = true;
   error.value = null;
+  // Ensure auth state (including bookmarks) is potentially loaded before rendering
+  // Although checkAuth in router guard might handle this, adding it here can be a fallback
+  // await auth.checkAuth(); // Uncomment if needed, but might be redundant
   await Promise.all([fetchQuizDetails(), fetchLeaderboard()]);
   isLoading.value = false;
 });
@@ -99,9 +125,18 @@ const formatDate = (dateString) => {
   <div class="quiz-detail-container">
     <div v-if="isLoading" class="loading">Loading quiz details...</div>
     <div v-if="error" class="error-message">{{ error }}</div>
+    <!-- Display bookmark action error -->
+    <div v-if="actionError" class="error-message">{{ actionError }}</div>
 
     <div v-if="!isLoading && quiz" class="quiz-content">
       <h1>{{ quiz.title }}</h1>
+      <!-- Bookmark Button -->
+      <div class="bookmark-action">
+          <button @click="toggleBookmark" :class="['btn-bookmark', { 'bookmarked': isBookmarked }]">
+            <i :class="isBookmarked ? 'fas fa-bookmark' : 'far fa-bookmark'"></i>
+            {{ isBookmarked ? 'Bookmarked' : 'Bookmark this Quiz' }}
+          </button>
+      </div>
       <p class="description">{{ quiz.description }}</p>
       <p class="created-by">Created by: {{ quiz.createdBy?.displayName || 'Unknown' }}</p>
       <p class="quiz-code-display">Code: <code>{{ quiz.code }}</code></p> <!-- Display quiz code -->
@@ -313,6 +348,9 @@ h1 {
   background-color: #ffebee;
   border: 1px solid #ffcdd2;
   border-radius: 4px;
+  padding: 1rem; /* Ensure padding */
+  margin-bottom: 1rem; /* Add margin */
+  text-align: center;
 }
 
 .quiz-code-display {
@@ -405,4 +443,46 @@ h1 {
     color: #2e7d32;
     border: 1px solid #c8e6c9;
 }
+
+.bookmark-action {
+    text-align: center;
+    margin-bottom: 1.5rem; /* Space below bookmark button */
+}
+
+.btn-bookmark {
+    padding: 0.7rem 1.5rem;
+    border-radius: 20px; /* Pill shape */
+    text-decoration: none;
+    text-align: center;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s, box-shadow 0.2s;
+    border: 1px solid #6c757d;
+    background-color: #fff;
+    color: #6c757d;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-bookmark:hover {
+    background-color: #f8f9fa;
+    border-color: #5a6268;
+    color: #5a6268;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.btn-bookmark.bookmarked {
+    background-color: #ffc107;
+    border-color: #ffc107;
+    color: #333;
+}
+
+.btn-bookmark.bookmarked:hover {
+    background-color: #e0a800;
+    border-color: #e0a800;
+}
+
+/* Add Font Awesome if not already included globally */
+/* @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css'); */
 </style>

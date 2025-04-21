@@ -11,7 +11,8 @@ const userSchema = new mongoose.Schema({
   firstName:  String,
   lastName:   String,
   age:        Number,
-  accentColor:String
+  accentColor:String,
+  bookmarkedQuizzes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Quiz' }]
 }, { timestamps: true });
 
 export default mongoose.model('User', userSchema);

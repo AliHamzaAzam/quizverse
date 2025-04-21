@@ -9,6 +9,7 @@ const error = ref(null);
 const auth = useAuthStore(); // Get auth store instance
 const searchTerm = ref(''); // Add state for search term
 const displayedQuizzes = ref([]); // Ref to hold quizzes actually displayed
+const actionError = ref(null); // Ref for bookmark action errors
 
 const fetchQuizzes = async () => {
   isLoading.value = true;
@@ -28,6 +29,29 @@ const fetchQuizzes = async () => {
 // Function to check if the current user created the quiz
 const isCreator = (quiz) => {
     return auth.user && quiz.createdBy && auth.user._id === quiz.createdBy._id;
+};
+
+// Computed property to check if a quiz is bookmarked
+const isBookmarked = (quizId) => {
+    return auth.bookmarkedQuizIds.includes(quizId);
+};
+
+// Function to toggle bookmark status
+const toggleBookmark = async (quizId) => {
+    actionError.value = null; // Clear previous error
+    try {
+        if (isBookmarked(quizId)) {
+            await auth.removeBookmark(quizId);
+        } else {
+            await auth.addBookmark(quizId);
+        }
+        // No need to manually update local state if auth store is reactive
+    } catch (err) {
+        console.error('Failed to toggle bookmark:', err);
+        actionError.value = err.message || 'Could not update bookmark.';
+        // Clear error after some time
+        setTimeout(() => { actionError.value = null; }, 3000);
+    }
 };
 
 // Function to filter quizzes based on search term and update displayedQuizzes
@@ -80,6 +104,8 @@ onMounted(fetchQuizzes);
 
     <div v-if="isLoading" class="loading">Loading quizzes...</div>
     <div v-if="error" class="error-message">{{ error }}</div>
+    <!-- Display bookmark action error -->
+    <div v-if="actionError" class="error-message">{{ actionError }}</div>
 
     <!-- Use displayedQuizzes in the v-for loop -->
     <ul v-if="!isLoading && !error && displayedQuizzes.length > 0" class="quiz-list">
@@ -94,6 +120,11 @@ onMounted(fetchQuizzes);
           <router-link :to="`/quizzes/${quiz._id}`" class="btn-details">View Details</router-link>
           <!-- Add Edit button only if user is the creator -->
           <router-link v-if="isCreator(quiz)" :to="`/quizzes/${quiz._id}/edit`" class="btn-edit">Edit</router-link>
+          <!-- Bookmark Button -->
+          <button @click="toggleBookmark(quiz._id)" :class="['btn-bookmark', { 'bookmarked': isBookmarked(quiz._id) }]">
+            <i :class="isBookmarked(quiz._id) ? 'fas fa-bookmark' : 'far fa-bookmark'"></i> <!-- Font Awesome icons -->
+            {{ isBookmarked(quiz._id) ? 'Bookmarked' : 'Bookmark' }}
+          </button>
         </div>
       </li>
     </ul>
@@ -197,6 +228,9 @@ h1 {
   background-color: #ffebee;
   border: 1px solid #ffcdd2;
   border-radius: 4px;
+  padding: 1rem; /* Ensure padding */
+  margin-bottom: 1rem; /* Add margin */
+  text-align: center;
 }
 
 .no-quizzes {
@@ -281,6 +315,7 @@ h1 {
   display: flex;
   flex-wrap: wrap; /* Allow buttons to wrap on smaller screens */
   gap: 0.75rem; /* Increased gap */
+  align-items: center; /* Align buttons vertically */
 }
 
 .quiz-actions a {
@@ -320,5 +355,41 @@ h1 {
 .btn-edit:hover {
     background-color: #fca311;
 }
+
+.btn-bookmark {
+    padding: 0.6rem 1rem; /* Slightly smaller padding */
+    border-radius: 4px;
+    text-decoration: none;
+    text-align: center;
+    font-size: 0.85rem; /* Smaller font size */
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+    border: 1px solid #6c757d; /* Default border */
+    background-color: #fff;
+    color: #6c757d;
+    display: inline-flex; /* Align icon and text */
+    align-items: center;
+    gap: 0.4rem; /* Space between icon and text */
+}
+
+.btn-bookmark:hover {
+    background-color: #f8f9fa;
+    border-color: #5a6268;
+    color: #5a6268;
+}
+
+.btn-bookmark.bookmarked {
+    background-color: #ffc107; /* Yellow when bookmarked */
+    border-color: #ffc107;
+    color: #333;
+}
+
+.btn-bookmark.bookmarked:hover {
+    background-color: #e0a800;
+    border-color: #e0a800;
+}
+
+/* Add Font Awesome if not already included globally */
+/* @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css'); */
 
 </style>

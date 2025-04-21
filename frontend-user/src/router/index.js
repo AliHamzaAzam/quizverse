@@ -10,6 +10,7 @@ import QuizAttempt from '@/views/QuizAttempt.vue' // Added
 import MyAttempts from '@/views/MyAttempts.vue' // Added
 import QuizForm from '@/views/QuizForm.vue' // Added
 import MyQuizzes from '@/views/MyQuizzes.vue' // Import the new view
+import BookmarkedQuizzes from '@/views/BookmarkedQuizzes.vue'; // Import BookmarkedQuizzes view
 
 const routes = [
     {
@@ -78,6 +79,12 @@ const routes = [
         path: '/my-quizzes', // Add route for My Quizzes
         name: 'MyQuizzes',
         component: MyQuizzes,
+        meta: { requiresAuth: true }
+    },
+    {
+        path: '/bookmarked-quizzes', // Add route for Bookmarked Quizzes
+        name: 'BookmarkedQuizzes',
+        component: BookmarkedQuizzes,
         meta: { requiresAuth: true }
     },
 ]

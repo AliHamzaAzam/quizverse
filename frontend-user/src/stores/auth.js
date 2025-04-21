@@ -8,6 +8,7 @@ export const useAuthStore = defineStore('auth', () => {
     const user = ref(null);
     const error = ref(null);
     const isAuthenticated = computed(() => !!user.value);
+    const bookmarkedQuizIds = computed(() => user.value?.bookmarkedQuizzes || []);
 
     const signup = async (formData) => {
         try {
@@ -86,21 +87,43 @@ export const useAuthStore = defineStore('auth', () => {
 
     const updateProfile = async (formData) => {
         try {
-            // Assuming PATCH /api/profile is your update endpoint
             const { data } = await api.patch('/api/profile', formData, {
                 headers: {
-                    // Important for file uploads with FormData
                     'Content-Type': 'multipart/form-data'
                 }
             });
-            // Update the local user state with the updated profile data
             user.value = data.user;
-            error.value = null; // Clear previous errors
+            error.value = null;
         } catch (err) {
             console.error('Profile update error:', err);
             error.value = err.response?.data?.message || 'Failed to update profile';
-            // Re-throw the error so the component can catch it if needed
             throw new Error(error.value);
+        }
+    };
+
+    const addBookmark = async (quizId) => {
+        if (!user.value) return;
+        try {
+            await api.post(`/api/profile/bookmarks/${quizId}`);
+            if (user.value.bookmarkedQuizzes && !user.value.bookmarkedQuizzes.includes(quizId)) {
+                user.value.bookmarkedQuizzes.push(quizId);
+            }
+        } catch (err) {
+            console.error('Failed to add bookmark:', err);
+            throw new Error(err.response?.data?.message || 'Failed to add bookmark');
+        }
+    };
+
+    const removeBookmark = async (quizId) => {
+        if (!user.value) return;
+        try {
+            await api.delete(`/api/profile/bookmarks/${quizId}`);
+            if (user.value.bookmarkedQuizzes) {
+                user.value.bookmarkedQuizzes = user.value.bookmarkedQuizzes.filter(id => id !== quizId);
+            }
+        } catch (err) {
+            console.error('Failed to remove bookmark:', err);
+            throw new Error(err.response?.data?.message || 'Failed to remove bookmark');
         }
     };
 
@@ -108,6 +131,7 @@ export const useAuthStore = defineStore('auth', () => {
         user,
         error,
         isAuthenticated,
+        bookmarkedQuizIds,
         signup,
         login,
         checkAuth,
@@ -115,6 +139,8 @@ export const useAuthStore = defineStore('auth', () => {
         clearError,
         setUser,
         fetchCurrentUser,
-        updateProfile // <-- Add updateProfile here
+        updateProfile,
+        addBookmark,
+        removeBookmark
     };
 });
