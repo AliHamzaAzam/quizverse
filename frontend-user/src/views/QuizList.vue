@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue'; // Import computed
+import { ref, onMounted, computed, watch } from 'vue'; // Import computed and watch
 import api from '@/utils/axios'; // Use the configured axios instance
 import { useAuthStore } from '@/stores/auth'; // Import auth store
 
@@ -11,13 +11,17 @@ const searchTerm = ref(''); // Add state for search term
 const displayedQuizzes = ref([]); // Ref to hold quizzes actually displayed
 const actionError = ref(null); // Ref for bookmark action errors
 
+// --- Sorting State ---
+const sortBy = ref('createdAt'); // Default sort: Newest first
+const sortOrder = ref('desc'); // Default order: Descending
+
 const fetchQuizzes = async () => {
   isLoading.value = true;
   error.value = null;
   try {
     const { data } = await api.get('/api/quizzes');
     quizzes.value = data;
-    performSearch(); // Initialize displayed quizzes
+    performSearch(); // Apply initial sort and filter
   } catch (err) {
     error.value = 'Failed to load quizzes.';
     console.error(err);
@@ -25,6 +29,36 @@ const fetchQuizzes = async () => {
     isLoading.value = false;
   }
 };
+
+// --- Computed property for sorting ---
+const sortedQuizzes = computed(() => {
+  const sorted = [...quizzes.value]; // Create a shallow copy to avoid mutating original
+  sorted.sort((a, b) => {
+    let valA = a[sortBy.value];
+    let valB = b[sortBy.value];
+
+    // Handle potential nested properties like createdBy.displayName if needed later
+    // Handle date sorting for 'createdAt'
+    if (sortBy.value === 'createdAt') {
+      valA = new Date(valA);
+      valB = new Date(valB);
+    } else if (typeof valA === 'string') {
+      // Case-insensitive string comparison
+      valA = valA.toLowerCase();
+      valB = valB.toLowerCase();
+    }
+
+    let comparison = 0;
+    if (valA > valB) {
+      comparison = 1;
+    } else if (valA < valB) {
+      comparison = -1;
+    }
+
+    return sortOrder.value === 'desc' ? (comparison * -1) : comparison;
+  });
+  return sorted;
+});
 
 // Function to check if the current user created the quiz
 const isCreator = (quiz) => {
@@ -56,18 +90,19 @@ const toggleBookmark = async (quizId) => {
 
 // Function to filter quizzes based on search term and update displayedQuizzes
 const performSearch = () => {
+  // Now filter the sorted list
+  const sourceList = sortedQuizzes.value;
   if (!searchTerm.value) {
-    displayedQuizzes.value = quizzes.value; // Show all if search is empty
+    displayedQuizzes.value = sourceList; // Show all sorted if search is empty
     return;
   }
   const lowerSearchTerm = searchTerm.value.toLowerCase();
   // Ensure quiz.code exists before trying to access its properties
-  displayedQuizzes.value = quizzes.value.filter(quiz =>
+  displayedQuizzes.value = sourceList.filter(quiz =>
     quiz.title.toLowerCase().includes(lowerSearchTerm) ||
     (quiz.code && quiz.code.toLowerCase().includes(lowerSearchTerm))
   );
 };
-
 
 // Trigger search on Enter key press in the input field
 const handleSearchInputKeydown = (event) => {
@@ -76,6 +111,10 @@ const handleSearchInputKeydown = (event) => {
   }
 };
 
+// --- Watch for changes in sort options ---
+watch([sortBy, sortOrder], () => {
+  performSearch(); // Re-apply sorting and filtering
+});
 
 onMounted(fetchQuizzes);
 </script>
@@ -84,7 +123,7 @@ onMounted(fetchQuizzes);
   <div class="quiz-list-container">
     <h1>Available Quizzes</h1>
 
-    <!-- Search and Add Quiz Section -->
+    <!-- Search, Sort, and Add Quiz Section -->
     <div class="controls-section">
        <!-- Search Input and Button -->
        <div class="search-container">
@@ -93,10 +132,25 @@ onMounted(fetchQuizzes);
            v-model="searchTerm"
            placeholder="Search by title or code..."
            class="search-input"
-           @keydown="handleSearchInputKeydown" 
+           @keydown="handleSearchInputKeydown"
          />
-         <button @click="performSearch" class="btn-search">Search</button> <!-- Add search button -->
+         <button @click="performSearch" class="btn-search">Search</button>
        </div>
+
+       <!-- Sorting Controls -->
+       <div class="sort-container">
+         <label for="sort-by">Sort by:</label>
+         <select id="sort-by" v-model="sortBy" class="sort-select">
+           <option value="title">Title</option>
+           <option value="createdAt">Date Created</option>
+           <!-- Add more options later if needed, e.g., popularity -->
+         </select>
+         <select v-model="sortOrder" class="sort-select">
+           <option value="asc">Ascending</option>
+           <option value="desc">Descending</option>
+         </select>
+       </div>
+
        <!-- Add Quiz Button -->
        <router-link to="/quizzes/new" class="btn-add-quiz">Create New Quiz</router-link>
     </div>
@@ -157,12 +211,12 @@ h1 {
     align-items: center;
     margin-bottom: 2rem;
     flex-wrap: wrap; /* Allow wrapping on smaller screens */
-    gap: 1rem; /* Add gap between items */
+    gap: 1.5rem; /* Increased gap to accommodate sorting */
 }
 
 .search-container {
     flex-grow: 1; /* Allow search bar to take available space */
-    min-width: 250px; /* Minimum width for the search bar */
+    min-width: 200px; /* Adjust min-width if needed */
     display: flex; /* Use flexbox to align input and button */
     gap: 0.5rem; /* Add space between input and button */
 }
@@ -193,6 +247,26 @@ h1 {
     background-color: #0056b3;
 }
 
+.sort-container {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-shrink: 0; /* Prevent shrinking */
+}
+
+.sort-container label {
+    font-size: 0.9rem;
+    color: #555;
+    white-space: nowrap;
+}
+
+.sort-select {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    background-color: #fff;
+}
 
 .add-quiz-section {
     margin-bottom: 2rem;
@@ -250,7 +324,6 @@ h1 {
     padding: 0;
     font-size: inherit;
 }
-
 
 .quiz-list {
   list-style: none;

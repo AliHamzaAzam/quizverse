@@ -1,7 +1,7 @@
 import express from 'express';
 import Report from '../models/Report.js';
 import Quiz from '../models/Quiz.js';
-import { authenticate } from '../middleware/auth.js'; 
+import { authenticate } from '../middleware/auth.js'; // Correctly import authenticate
 
 const router = express.Router();
 
@@ -47,5 +47,46 @@ router.post('/', authenticate, async (req, res) => { // Use the imported middlew
     res.status(500).json({ message: 'Failed to submit report.' });
   }
 });
+
+// POST /api/report/quiz/:quizId - Report a quiz
+router.post('/quiz/:quizId', authenticate, async (req, res) => { // Use authenticate middleware
+    const { reason } = req.body;
+    const { quizId } = req.params;
+    const reporterId = req.userId; // Use req.userId attached by authenticate middleware
+
+    if (!reason) {
+        return res.status(400).json({ message: 'Reason for reporting is required.' });
+    }
+
+    try {
+        // Check if the quiz exists
+        const quiz = await Quiz.findById(quizId);
+        if (!quiz) {
+            return res.status(404).json({ message: 'Quiz not found.' });
+        }
+
+        // Optional: Check if the user has already reported this quiz
+        const existingReport = await Report.findOne({ reporter: reporterId, quiz: quizId });
+        if (existingReport) {
+            return res.status(409).json({ message: 'You have already reported this quiz.' });
+        }
+
+        const newReport = new Report({
+            reporter: reporterId,
+            quiz: quizId,
+            reason: reason,
+            type: 'quiz' // Specify the type of report
+        });
+
+        await newReport.save();
+        res.status(201).json({ message: 'Quiz reported successfully.', report: newReport });
+
+    } catch (error) {
+        console.error('Error reporting quiz:', error);
+        res.status(500).json({ message: 'Server error while reporting quiz.' });
+    }
+});
+
+// Add other report-related routes if needed (e.g., reporting users)
 
 export default router;

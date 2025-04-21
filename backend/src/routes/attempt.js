@@ -22,6 +22,10 @@ router.post('/:quizId', async (req, res) => {
     answers,
     score
   });
+
+  // Increment attempt count on the Quiz model
+  await Quiz.findByIdAndUpdate(req.params.quizId, { $inc: { attemptCount: 1 } });
+
   res.status(201).json({ score: at.score, attemptId: at._id }); // Return score and attemptId
 });
 

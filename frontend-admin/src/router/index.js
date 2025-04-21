@@ -18,36 +18,36 @@ const routes = [
         component: () => import('@/views/Dashboard.vue'),
         meta: { requiresAuth: true, requiresAdmin: true, title: 'Admin Dashboard' }
     },
-    // {
-    //     path: '/users',
-    //     name: 'Users',
-    //     component: () => import('@/views/UsersView.vue'),
-    //     meta: { requiresAuth: true, requiresAdmin: true, title: 'Manage Users' }
-    // },
-    // {
-    //     path: '/quizzes',
-    //     name: 'Quizzes',
-    //     component: () => import('@/views/QuizzesView.vue'),
-    //     meta: { requiresAuth: true, requiresAdmin: true, title: 'Manage Quizzes' }
-    // },
-    // {
-    //     path: '/reports',
-    //     name: 'Reports',
-    //     component: () => import('@/views/ReportsView.vue'),
-    //     meta: { requiresAuth: true, requiresAdmin: true, title: 'Analytics & Reports' }
-    // },
-    // {
-    //     path: '/settings',
-    //     name: 'Settings',
-    //     component: () => import('@/views/SettingsView.vue'),
-    //     meta: { requiresAuth: true, requiresAdmin: true, title: 'System Settings' }
-    // },
-    // {
-    //     path: '/:pathMatch(.*)*',
-    //     name: 'NotFound',
-    //     component: () => import('@/views/NotFoundView.vue'),
-    //     meta: { title: 'Page Not Found' }
-    // }
+    {
+        path: '/users',
+        name: 'Users',
+        component: () => import('@/views/UsersView.vue'),
+        meta: { requiresAuth: true, requiresAdmin: true, title: 'Manage Users' }
+    },
+    {
+        path: '/quizzes',
+        name: 'Quizzes',
+        component: () => import('@/views/QuizzesView.vue'),
+        meta: { requiresAuth: true, requiresAdmin: true, title: 'Manage Quizzes' }
+    },
+    {
+        path: '/reports',
+        name: 'Reports',
+        component: () => import('@/views/ReportsView.vue'),
+        meta: { requiresAuth: true, requiresAdmin: true, title: 'Analytics & Reports' }
+    },
+    {
+        path: '/settings',
+        name: 'Settings',
+        component: () => import('@/views/SettingsView.vue'),
+        meta: { requiresAuth: true, requiresAdmin: true, title: 'System Settings' }
+    },
+    {
+        path: '/:pathMatch(.*)*',
+        name: 'NotFound',
+        component: () => import('@/views/NotFoundView.vue'),
+        meta: { title: 'Page Not Found' }
+    }
 ];
 
 const router = createRouter({

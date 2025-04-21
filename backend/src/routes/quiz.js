@@ -1,6 +1,7 @@
 import express from 'express';
 import Quiz from '../models/Quiz.js';
 import Feedback from '../models/Feedback.js'; // Import Feedback model
+import User from '../models/User.js'; // Import User model
 
 const router = express.Router();
 
@@ -17,8 +18,8 @@ function generateCode(length = 4) {
 // Create a quiz (any authenticated user)
 router.post('/', async (req, res) => {
   try {
-    // Include timeLimit from request body
-    const { title, description, questions, timeLimit } = req.body;
+    // Include timeLimit and category from request body
+    const { title, description, questions, timeLimit, category } = req.body;
 
     let uniqueCode = '';
     let codeExists = true;
@@ -38,12 +39,12 @@ router.post('/', async (req, res) => {
         return res.status(500).json({ message: 'Failed to generate a unique quiz code. Please try again.' });
     }
 
-
     const q = await Quiz.create({
       title,
       description,
       code: uniqueCode, // Add the generated unique code
       questions,
+      category, // Include category
       timeLimit: timeLimit ? parseInt(timeLimit, 10) : null, // Ensure it's a number or null
       createdBy: req.userId
     });
@@ -59,10 +60,50 @@ router.post('/', async (req, res) => {
 
 // Read all quizzes (hide answers)
 router.get('/', async (req, res) => {
-  const list = await Quiz.find()
-    .select('-questions.correctOption')
-    .populate('createdBy','displayName');
-  res.json(list);
+  const { sortBy, sortOrder, category, createdBy, bookmarkedBy } = req.query;
+  let query = Quiz.find();
+  let sortOptions = {};
+
+  // Filtering
+  if (category) {
+    query = query.where('category').equals(category);
+  }
+  if (createdBy) {
+    query = query.where('createdBy').equals(createdBy);
+  }
+  if (bookmarkedBy) {
+    // Find the user and get their bookmarked quiz IDs
+    try {
+      const user = await User.findById(bookmarkedBy).select('bookmarkedQuizzes');
+      if (user) {
+        query = query.where('_id').in(user.bookmarkedQuizzes);
+      } else {
+        // If user not found, return empty list or handle as appropriate
+        return res.json([]);
+      }
+    } catch (err) {
+      console.error("Error fetching user for bookmarks:", err);
+      return res.status(500).json({ message: 'Error filtering by bookmarks' });
+    }
+  }
+
+  // Sorting
+  const validSortFields = ['title', 'createdAt', 'attemptCount', 'category'];
+  if (sortBy && validSortFields.includes(sortBy)) {
+    sortOptions[sortBy] = (sortOrder === 'asc') ? 1 : -1; // Default to desc
+  } else {
+    sortOptions['createdAt'] = -1; // Default sort by newest
+  }
+  query = query.sort(sortOptions);
+
+  try {
+    // Populate createdBy field with displayName only
+    const quizzes = await query.populate('createdBy', 'displayName').exec();
+    res.json(quizzes);
+  } catch (err) {
+    console.error("Error fetching quizzes:", err);
+    res.status(500).json({ message: 'Failed to retrieve quizzes' });
+  }
 });
 
 // Read quizzes created by the current user
@@ -167,8 +208,8 @@ router.patch('/:id', async (req, res) => {
   if (!q.createdBy.equals(req.userId) && req.user.role !== 'admin') {
     return res.status(403).json({ message: 'Not allowed' });
   }
-  // Explicitly update allowed fields, including timeLimit
-  const { title, description, questions, timeLimit } = req.body;
+  // Explicitly update allowed fields, including timeLimit and category
+  const { title, description, questions, timeLimit, category } = req.body;
   if (title) q.title = title;
   if (description !== undefined) q.description = description;
   if (questions) q.questions = questions;
@@ -176,6 +217,7 @@ router.patch('/:id', async (req, res) => {
   if (timeLimit !== undefined) {
       q.timeLimit = timeLimit ? parseInt(timeLimit, 10) : null;
   }
+  if (category !== undefined) q.category = category;
   
   await q.save();
   // Populate createdBy before sending response
