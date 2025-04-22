@@ -60,8 +60,7 @@ app.use(session({
     // SameSite=None is required. Secure=true is also typically required with SameSite=None,
     // but browsers *may* allow Secure=false for localhost.
     // This setup is for DEVELOPMENT ONLY. In production with HTTPS, use SameSite=None and Secure=true.
-    sameSite: 'none',
-    secure: false, // Set to true if using HTTPS, even locally
+    sameSite: 'Lax', // Use Lax for better HTTP compatibility in dev
     httpOnly: true // Keep httpOnly for security
   }
 }));
