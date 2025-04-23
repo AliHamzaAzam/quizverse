@@ -42,6 +42,7 @@ app.use(cors({
       process.env.ADMIN_URL,  // Keep existing env var
       // 'http://localhost:5173', // Explicitly allow default Vite dev origin
       // 'http://127.0.0.1:5173' // Allow loopback IP as well
+      'https://quizverse-p6boulyed-ali-hamzas-projects-4c11c478.vercel.app' 
     ];
     // allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
