@@ -15,7 +15,14 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      '/api': 'http://localhost:5001'  // Forward any request starting with /api to backend
+      // use server url from env variable
+      '/api': {
+        target: process.env.VITE_SERVER_URL || 'http://localhost:3000',
+        changeOrigin: true,
+        secure: false,
+        // rewrite path to remove /api prefix
+        rewrite: (path) => path.replace(/^\/api/, '')
+      }
     }
   }
 })
