@@ -6,6 +6,7 @@ import dotenv from 'dotenv';
 import session from 'express-session';
 import passport from 'passport';
 import cookieParser from 'cookie-parser';
+import MongoStore from 'connect-mongo'; 
 
 import authRoutes from './routes/auth.js';
 import adminRoutes from './routes/admin.js';
@@ -66,14 +67,19 @@ app.use(session({
   secret: process.env.JWT_SECRET,
   resave: false,
   saveUninitialized: false,
+  // Use MongoStore for persistent sessions
+  store: MongoStore.create({
+    mongoUrl: process.env.MONGO_URI,
+    collectionName: 'sessions' // Optional: specify collection name
+  }),
   cookie: {
     // Set attributes based on environment
     sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
     secure: process.env.NODE_ENV === 'production', // true only for production (HTTPS)
     httpOnly: true,
+    maxAge: 1000 * 60 * 60 * 24 // Example: 1 day session expiry
     // Domain: Omit for localhost. For production, set via env var if needed (e.g., parent domain like '.yourdomain.com')
-    domain: process.env.NODE_ENV === 'production' ? process.env.COOKIE_DOMAIN : undefined
-    // maxAge: 1000 * 60 * 60 * 24 // Optional: Set session expiry (e.g., 1 day)
+    // domain: process.env.NODE_ENV === 'production' ? process.env.COOKIE_DOMAIN : undefined // Removed explicit domain setting for now
   }
 }));
 

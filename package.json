@@ -11,5 +11,8 @@
   "devDependencies": {
     "concurrently": "^8.2.2",
     "cross-env": "^7.0.3"
+  },
+  "dependencies": {
+    "connect-mongo": "^5.1.0"
   }
 }
