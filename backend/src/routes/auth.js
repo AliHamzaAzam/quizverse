@@ -79,25 +79,31 @@ router.post('/login', async (req, res) => {
 router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
 
 router.get('/google/callback',
-    passport.authenticate('google', {
-        failureRedirect: `${process.env.CLIENT_URL}/login`,
-        session: true
-    }),
-    (req, res) => {
-        const redirectUrl = req.user.role === 'admin'
-            ? process.env.ADMIN_URL
-            : process.env.CLIENT_URL;
-
-        res.send(`
-      <script>
-        window.opener.postMessage({
-          type: 'auth-success',
-          redirect: '${redirectUrl}'
-        }, '*');
-        window.close();
-      </script>
-    `);
-    }
+  (req, res, next) => {
+    // console.log('[Google Callback] Entering callback handler');
+    passport.authenticate('google', { session: true }, (err, user, info) => {
+      if (err) {
+        // console.error('[Google Callback] Passport authentication error:', err);
+        return res.redirect(`${process.env.CLIENT_URL}/login?error=AuthenticationFailed`);
+      }
+      if (!user) {
+        // console.log('[Google Callback] Passport authentication failed, no user returned.');
+        return res.redirect(`${process.env.CLIENT_URL}/login?error=AuthenticationFailed`);
+      }
+      // console.log('[Google Callback] Passport authentication successful for user:', user.email);
+      req.logIn(user, (loginErr) => {
+        if (loginErr) {
+          // console.error('[Google Callback] req.logIn error:', loginErr);
+          return res.redirect(`${process.env.CLIENT_URL}/login?error=SessionSetupFailed`);
+        }
+        // console.log('[Google Callback] req.logIn successful. Session before redirect:', req.session);
+        // Redirect based on role
+        const redirectUrl = user.role === 'admin' ? process.env.ADMIN_URL : process.env.CLIENT_URL;
+        // console.log(`[Google Callback] Redirecting to: ${redirectUrl || '/'}`)
+        res.redirect(redirectUrl || '/'); // Redirect to frontend (user or admin)
+      });
+    })(req, res, next); // Immediately invoke the middleware function
+  }
 );
 
 // admin-specific login endpoint
@@ -142,19 +148,27 @@ function generateToken(user, expiresIn, isRefresh = false) {
 }
 
 function setAuthCookies(res, accessToken, refreshToken) {
+    const isProduction = process.env.NODE_ENV === 'production';
+
     res.cookie('accessToken', accessToken, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'Lax', // Changed from 'Strict' to 'Lax'
+        // Secure MUST be true if SameSite=None
+        secure: isProduction,
+        // SameSite=None is REQUIRED for cross-origin cookie sending
+        sameSite: isProduction ? 'None' : 'Lax',
         maxAge: 15 * 60 * 1000 // 15 minutes
+        // Domain: Consider removing or ensuring it's correct if set
     });
 
     res.cookie('refreshToken', refreshToken, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        path: '/api/auth/refresh',
-        sameSite: 'Strict',
+        secure: isProduction,
+        path: '/api/auth/refresh', // Keep specific path
+        // SameSite=None needed if refresh is called cross-origin
+        // SameSite=Strict might be okay IF refresh is only ever called same-origin
+        sameSite: isProduction ? 'None' : 'Strict', // Adjust if refresh is cross-origin
         maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+        // Domain: Consider removing or ensuring it's correct if set
     });
 }
 
