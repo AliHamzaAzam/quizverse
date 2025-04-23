@@ -1,30 +1,38 @@
+import passport from 'passport';
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 
 export const authenticate = (req, res, next) => {
-  // Check 1: Passport session (most common for web logins)
-  if (req.isAuthenticated()) { // Passport adds this method if session is valid
+  // console.log('[Auth Middleware] Running for path:', req.path);
+  // console.log('[Auth Middleware] Session:', req.session);
+  // console.log('[Auth Middleware] IsAuthenticated (Passport)?', req.isAuthenticated());
+
+  if (req.isAuthenticated()) {
+    // console.log('[Auth Middleware] Authenticated via session/passport.');
     req.userId = req.user.id; // Attach user ID from session
     return next();
   }
 
-  // Check 2: JWT Token (useful for API clients or alternative auth)
-  const token = req.cookies?.accessToken;
-  if (token) {
-    try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      req.userId = decoded.userId;
-      // Optional: You might want to load the full user object here if needed
-      // req.user = await User.findById(decoded.userId);
-      return next();
-    } catch (err) {
-      // Invalid token
-      return res.status(401).json({ message: 'Invalid token' });
-    }
+  // Fallback: Check for JWT in cookie if not authenticated via session
+  const token = req.cookies.accessToken;
+  // console.log('[Auth Middleware] AccessToken cookie:', token ? 'Present' : 'Missing');
+
+  if (!token) {
+    // console.log('[Auth Middleware] No session, no token. Unauthorized.');
+    return res.status(401).json({ message: 'Unauthorized: No session or token' });
   }
 
-  // If neither method authenticated the user
-  return res.status(401).json({ message: 'Authentication required' });
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    // console.log('[Auth Middleware] Token verified. User ID:', decoded.id);
+    req.userId = decoded.userId;
+    // Optional: You might want to load the full user object here if needed
+    // req.user = await User.findById(decoded.userId);
+    next();
+  } catch (err) {
+    // console.log('[Auth Middleware] Invalid token.', err.message);
+    return res.status(401).json({ message: 'Unauthorized: Invalid token' });
+  }
 };
 
 export const isAdmin = async (req, res, next) => {

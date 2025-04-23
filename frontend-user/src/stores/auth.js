@@ -36,8 +36,10 @@ export const useAuthStore = defineStore('auth', () => {
     };
 
     const login = async (credentials) => {
+        // console.log('User try data:');
         try {
             const { data } = await api.post('/api/auth/login', credentials);
+            // console.log('User try data:', data);
             user.value = data.user;
             router.push('/dashboard');
         } catch (err) {
@@ -46,11 +48,15 @@ export const useAuthStore = defineStore('auth', () => {
     };
 
     const checkAuth = async () => {
+        // console.log('User try auth:');
         try {
             const { data } = await api.get('/api/auth/me');
+            // console.log('User data:', data);
             user.value = data.user;
             return !!user.value;
-        } catch {
+        } catch (err) { // Add err parameter to catch block
+            // console.log('User data:', data); // Removed: data is not defined here
+            // console.error('Check auth failed:', err); // Log the actual error
             user.value = null;
             return false;
         }

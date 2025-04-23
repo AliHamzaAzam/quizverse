@@ -23,13 +23,24 @@ dotenv.config();
 
 const app = express();
 
+// If running behind a proxy (like Nginx, or even Vite's dev proxy sometimes),
+// trust the first hop.
+app.set('trust proxy', 1);
+
+// Add this root-level logger *before* CORS
+app.use((req, res, next) => {
+  console.log(`[Root Logger] Received request: ${req.method} ${req.originalUrl} from Origin: ${req.headers.origin}`);
+  console.log(`[Root Logger] Cookies:`, req.cookies); // Log cookies received by the server
+  next();
+});
+
 app.use(cors({
   origin: (origin, callback) => {
     const allowedOrigins = [
       process.env.CLIENT_URL, // Keep existing env var
       process.env.ADMIN_URL,  // Keep existing env var
-      'http://localhost:5173', // Explicitly allow default Vite dev origin
-      'http://127.0.0.1:5173' // Allow loopback IP as well
+      // 'http://localhost:5173', // Explicitly allow default Vite dev origin
+      // 'http://127.0.0.1:5173' // Allow loopback IP as well
     ];
     // allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
@@ -56,12 +67,13 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
   cookie: {
-    // IMPORTANT: For cross-site requests (like frontend on 5173 talking to backend on 5001),
-    // SameSite=None is required. Secure=true is also typically required with SameSite=None,
-    // but browsers *may* allow Secure=false for localhost.
-    // This setup is for DEVELOPMENT ONLY. In production with HTTPS, use SameSite=None and Secure=true.
-    sameSite: 'Lax', // Use Lax for better HTTP compatibility in dev
-    httpOnly: true // Keep httpOnly for security
+    // Set attributes based on environment
+    sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
+    secure: process.env.NODE_ENV === 'production', // true only for production (HTTPS)
+    httpOnly: true,
+    // Domain: Omit for localhost. For production, set via env var if needed (e.g., parent domain like '.yourdomain.com')
+    domain: process.env.NODE_ENV === 'production' ? process.env.COOKIE_DOMAIN : undefined
+    // maxAge: 1000 * 60 * 60 * 24 // Optional: Set session expiry (e.g., 1 day)
   }
 }));
 
