@@ -12,14 +12,13 @@ const formData = ref({
   displayName: '',
   age: '',
   accentColor: '#ffffff',
-  avatarFile: null, // For file input
+  avatarFile: null,
 });
 const avatarPreview = ref('');
 const updateStatus = ref('');
 const updateError = ref('');
 const isUpdating = ref(false);
 
-// Function to populate form data from user state
 const populateForm = () => {
   if (user.value) {
     formData.value.firstName = user.value.firstName || '';
@@ -27,34 +26,27 @@ const populateForm = () => {
     formData.value.displayName = user.value.displayName || '';
     formData.value.age = user.value.age || '';
     formData.value.accentColor = user.value.accentColor || '#ffffff';
-    avatarPreview.value = user.value.avatar || ''; // Display current avatar URL
-    formData.value.avatarFile = null; // Reset file input state
+    avatarPreview.value = user.value.avatar || '';
+    formData.value.avatarFile = null;
   }
 };
 
-// Populate form when component mounts
 onMounted(populateForm);
 
-// Watch for changes in user data (e.g., after initial load or update)
 watch(user, (newUser) => {
-  if (newUser) {
-    populateForm();
-  }
-}, { immediate: true }); // Use immediate to run on initial mount too
+  if (newUser) populateForm();
+}, { immediate: true });
 
-const handleFileChange = (event) => {
-  const file = event.target.files[0];
+const handleFileChange = (e) => {
+  const file = e.target.files[0];
   if (file) {
     formData.value.avatarFile = file;
-    // Create a preview URL
     const reader = new FileReader();
-    reader.onload = (e) => {
-      avatarPreview.value = e.target.result;
-    };
+    reader.onload = (ev) => avatarPreview.value = ev.target.result;
     reader.readAsDataURL(file);
   } else {
     formData.value.avatarFile = null;
-    avatarPreview.value = user.value?.avatar || ''; // Revert to original if cleared
+    avatarPreview.value = user.value?.avatar || '';
   }
 };
 
@@ -64,77 +56,65 @@ const handleProfileUpdate = async () => {
   updateError.value = '';
 
   const dataToUpdate = new FormData();
-  // Append only fields that have values
   if (formData.value.firstName) dataToUpdate.append('firstName', formData.value.firstName);
   if (formData.value.lastName) dataToUpdate.append('lastName', formData.value.lastName);
   if (formData.value.displayName) dataToUpdate.append('displayName', formData.value.displayName);
   if (formData.value.age) dataToUpdate.append('age', formData.value.age);
   if (formData.value.accentColor) dataToUpdate.append('accentColor', formData.value.accentColor);
-
-  // Only append avatar if a new file has been selected
-  if (formData.value.avatarFile instanceof File) {
-    dataToUpdate.append('avatar', formData.value.avatarFile);
-  }
+  if (formData.value.avatarFile instanceof File) dataToUpdate.append('avatar', formData.value.avatarFile);
 
   try {
     await authStore.updateProfile(dataToUpdate);
     updateStatus.value = 'Profile updated successfully!';
-    // Form is repopulated by the watcher on `user`
-    // Clear the file input visually if needed (browser security might prevent this)
     const fileInput = document.querySelector('input[type="file"]');
-    if(fileInput) fileInput.value = '';
-
+    if (fileInput) fileInput.value = '';
   } catch (err) {
     updateError.value = err.message || 'Failed to update profile.';
-    updateStatus.value = '';
   } finally {
     isUpdating.value = false;
-    // Clear messages after a few seconds
-    setTimeout(() => {
-        updateStatus.value = '';
-        updateError.value = '';
-    }, 5000);
+    setTimeout(() => { updateStatus.value = ''; updateError.value = ''; }, 5000);
   }
 };
 </script>
 
 <template>
-  <div class="profile-container">
-    <h1>Your Profile</h1>
-    <div v-if="user" class="profile-details">
-      <p><strong>Email:</strong> {{ user.email }}</p>
-      <p><strong>Role:</strong> {{ user.role }}</p>
-
+  <div class="view-container">
+    <div class="content-wrapper">
+      <h1>Your Profile</h1>
+      <div v-if="user" class="profile-info">
+        <p><strong>Email:</strong> {{ user.email }}</p>
+        <p><strong>Role:</strong> {{ user.role }}</p>
+      </div>
       <form @submit.prevent="handleProfileUpdate" class="profile-form">
         <h2>Edit Profile</h2>
 
         <div class="form-group avatar-section">
           <label>Profile Picture</label>
-          <img v-if="avatarPreview" :src="avatarPreview" alt="Avatar Preview" class="avatar-preview">
+          <img v-if="avatarPreview" :src="avatarPreview" alt="Avatar Preview" class="avatar-preview" />
           <input type="file" @change="handleFileChange" accept="image/*" />
         </div>
 
         <div class="form-group">
           <label for="firstName">First Name</label>
-          <input type="text" id="firstName" v-model="formData.firstName" />
+          <input id="firstName" type="text" v-model="formData.firstName" />
         </div>
         <div class="form-group">
           <label for="lastName">Last Name</label>
-          <input type="text" id="lastName" v-model="formData.lastName" />
+          <input id="lastName" type="text" v-model="formData.lastName" />
         </div>
         <div class="form-group">
           <label for="displayName">Display Name</label>
-          <input type="text" id="displayName" v-model="formData.displayName" />
+          <input id="displayName" type="text" v-model="formData.displayName" />
         </div>
         <div class="form-group">
           <label for="age">Age</label>
-          <input type="number" id="age" v-model="formData.age" />
+          <input id="age" type="number" v-model="formData.age" />
         </div>
         <div class="form-group">
           <label for="accentColor">Accent Color</label>
-           <div style="display: flex; align-items: center; gap: 0.5rem;">
-            <input type="color" id="accentColor" v-model="formData.accentColor" />
-             <div :style="{ width: '30px', height: '30px', backgroundColor: formData.accentColor, border: '1px solid #ccc', borderRadius: '4px' }"></div>
+          <div class="color-picker-group">
+            <input id="accentColor" type="color" v-model="formData.accentColor" />
+            <div class="color-preview" :style="{ backgroundColor: formData.accentColor }"></div>
           </div>
         </div>
 
@@ -146,38 +126,42 @@ const handleProfileUpdate = async () => {
         </button>
       </form>
     </div>
-    <div v-else>
-      Loading profile...
-    </div>
   </div>
 </template>
 
 <style scoped>
-.profile-container {
-  max-width: 600px;
-  margin: 2rem auto;
+.view-container {
+  min-height: 100vh;
   padding: 2rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  background-color: #fff;
+  background: transparent;
 }
 
-h1 {
-    text-align: center;
-    margin-bottom: 1.5rem;
-    color: #333;
+.content-wrapper {
+  max-width: 600px;
+  margin: 0 auto;
+  background: rgba(255, 255, 255, 0.8);
+  padding: 2rem;
+  border-radius: 1rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-.profile-details p {
-  margin-bottom: 0.5rem;
-  color: #555;
+h1, h2 {
+  text-align: center;
+  color: var(--bg-end);
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.profile-info p {
+  margin: 0.5rem 0;
+  color: var(--text);
 }
 
 .profile-form {
-  margin-top: 2rem;
   display: flex;
   flex-direction: column;
-  gap: 1.2rem; /* Increased gap */
+  gap: 1rem;
+  margin-top: 1rem;
 }
 
 .form-group {
@@ -187,8 +171,9 @@ h1 {
 }
 
 .form-group label {
-    font-weight: bold;
-    color: #444;
+  font-weight: bold;
+  color: var(--text);
+  font-family: var(--font-pixel);
 }
 
 .avatar-section {
@@ -196,64 +181,46 @@ h1 {
 }
 
 .avatar-preview {
-  width: 100px;
-  height: 100px;
+  width: 80px;
+  height: 80px;
   border-radius: 50%;
   object-fit: cover;
   margin-bottom: 0.5rem;
-  border: 2px solid #ddd; /* Slightly thicker border */
+  border: 2px solid #ccc;
 }
 
 input[type="text"],
 input[type="number"],
-input[type="file"],
 input[type="color"] {
-  padding: 0.75rem;
+  padding: 0.6rem;
   border: 1px solid #ccc;
-  border-radius: 4px;
+  border-radius: 0.5rem;
   font-size: 1rem;
-  transition: border-color 0.2s;
 }
 
-input[type="text"]:focus,
-input[type="number"]:focus,
-input[type="color"]:focus {
-    border-color: #4361ee;
-    outline: none;
+input:focus {
+  outline: none;
+  border-color: var(--bg-end);
 }
 
-input[type="file"] {
-    padding: 0.5rem; /* Adjust padding for file input */
+.color-picker-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
-.btn-primary {
-  padding: 0.8rem 1.5rem; /* Slightly larger button */
-  border: none;
-  border-radius: 4px;
-  font-size: 1rem;
-  font-weight: bold;
-  cursor: pointer;
-  background-color: #4361ee;
-  color: white;
-  margin-top: 1rem;
-  transition: background-color 0.2s;
-}
-
-.btn-primary:disabled {
-  background-color: #a0a0a0;
-  cursor: not-allowed;
-}
-
-.btn-primary:hover:not(:disabled) {
-  background-color: #3a56d4;
+.color-preview {
+  width: 24px;
+  height: 24px;
+  border: 1px solid #ccc;
+  border-radius: 0.3rem;
 }
 
 .status-message {
-  padding: 0.75rem;
-  border-radius: 4px;
-  font-size: 0.9rem;
-  margin-top: 0.5rem;
   text-align: center;
+  padding: 0.6rem;
+  border-radius: 0.5rem;
+  font-size: 0.9rem;
 }
 
 .success {
@@ -263,8 +230,30 @@ input[type="file"] {
 }
 
 .error {
-   background-color: #ffebee;
-   color: #c62828;
-   border: 1px solid #ffcdd2;
+  background-color: #ffebee;
+  color: #c62828;
+  border: 1px solid #ffcdd2;
+}
+
+.btn-primary {
+  padding: 0.8rem;
+  border: 1px solid var(--bg-end);
+  border-radius: 0.5rem;
+  background: transparent;
+  color: var(--bg-end);
+  font-family: var(--font-pixel);
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--bg-end);
+  color: #fff;
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 </style>

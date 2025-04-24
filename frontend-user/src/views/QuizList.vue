@@ -1,19 +1,84 @@
+<template>
+  <div class="view-container">
+    <div class="content-wrapper">
+      <h1>Available Quizzes</h1>
+
+      <div class="controls-section">
+        <div class="search-container">
+          <input
+            type="text"
+            v-model="searchTerm"
+            placeholder="Search by title or code..."
+            class="search-input"
+            @keydown="handleSearchInputKeydown"
+          />
+          <button @click="performSearch" class="btn primary btn-search">Search</button>
+        </div>
+        <div class="sort-container">
+          <label for="sort-by">Sort by:</label>
+          <select id="sort-by" v-model="sortBy" class="sort-select">
+            <option value="title">Title</option>
+            <option value="createdAt">Date Created</option>
+          </select>
+          <select v-model="sortOrder" class="sort-select">
+            <option value="asc">Ascending</option>
+            <option value="desc">Descending</option>
+          </select>
+        </div>
+        <router-link to="/quizzes/new" class="btn primary btn-add-quiz">Create New Quiz</router-link>
+      </div>
+
+      <div v-if="isLoading" class="status-message">Loading quizzes...</div>
+      <div v-if="error" class="status-message error">{{ error }}</div>
+      <div v-if="actionError" class="status-message error">{{ actionError }}</div>
+
+      <ul v-if="!isLoading && !error && displayedQuizzes.length > 0" class="quiz-list">
+        <li v-for="quiz in displayedQuizzes" :key="quiz._id" class="quiz-item">
+          <h2>{{ quiz.title }}</h2>
+          <p class="quiz-code">Code: <strong>{{ quiz.code }}</strong></p>
+          <p class="description">{{ quiz.description }}</p>
+          <p class="created-by">Created by: {{ quiz.createdBy?.displayName || 'Unknown' }}</p>
+          <div class="quiz-actions">
+            <router-link :to="`/quizzes/${quiz._id}/attempt`" class="btn primary">Take Quiz</router-link>
+            <router-link :to="`/quizzes/${quiz._id}`" class="btn secondary">View Details</router-link>
+            <router-link v-if="isCreator(quiz)" :to="`/quizzes/${quiz._id}/edit`" class="btn secondary">Edit</router-link>
+            <button
+              @click="toggleBookmark(quiz._id)"
+              :class="['btn bookmark-btn', { bookmarked: isBookmarked(quiz._id) }]"
+            >
+              <i :class="isBookmarked(quiz._id) ? 'fas fa-bookmark' : 'far fa-bookmark'"></i>
+              {{ isBookmarked(quiz._id) ? 'Bookmarked' : 'Bookmark' }}
+            </button>
+          </div>
+        </li>
+      </ul>
+
+      <div v-if="!isLoading && !error && displayedQuizzes.length === 0 && searchTerm" class="status-message">
+        No quizzes found matching "{{ searchTerm }}".
+        <button @click="searchTerm=''; performSearch()" class="btn secondary link-btn">Clear Search</button>
+      </div>
+      <div v-else-if="!isLoading && !error && quizzes.length === 0" class="status-message">
+        No quizzes available yet. <router-link to="/quizzes/new" class="link-btn">Create one now!</router-link>
+      </div>
+    </div>
+  </div>
+</template>
+
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue'; // Import computed and watch
-import api from '@/utils/axios'; // Use the configured axios instance
-import { useAuthStore } from '@/stores/auth'; // Import auth store
+import { ref, onMounted, computed, watch } from 'vue';
+import api from '@/utils/axios';
+import { useAuthStore } from '@/stores/auth';
 
 const quizzes = ref([]);
+const displayedQuizzes = ref([]);
+const searchTerm = ref('');
 const isLoading = ref(true);
 const error = ref(null);
-const auth = useAuthStore(); // Get auth store instance
-const searchTerm = ref(''); // Add state for search term
-const displayedQuizzes = ref([]); // Ref to hold quizzes actually displayed
-const actionError = ref(null); // Ref for bookmark action errors
+const actionError = ref(null);
+const sortBy = ref('createdAt');
+const sortOrder = ref('desc');
 
-// --- Sorting State ---
-const sortBy = ref('createdAt'); // Default sort: Newest first
-const sortOrder = ref('desc'); // Default order: Descending
+const auth = useAuthStore();
 
 const fetchQuizzes = async () => {
   isLoading.value = true;
@@ -21,308 +86,125 @@ const fetchQuizzes = async () => {
   try {
     const { data } = await api.get('/api/quizzes');
     quizzes.value = data;
-    performSearch(); // Apply initial sort and filter
-  } catch (err) {
+    performSearch();
+  } catch {
     error.value = 'Failed to load quizzes.';
-    console.error(err);
   } finally {
     isLoading.value = false;
   }
 };
 
-// --- Computed property for sorting ---
 const sortedQuizzes = computed(() => {
-  const sorted = [...quizzes.value]; // Create a shallow copy to avoid mutating original
-  sorted.sort((a, b) => {
-    let valA = a[sortBy.value];
-    let valB = b[sortBy.value];
-
-    // Handle potential nested properties like createdBy.displayName if needed later
-    // Handle date sorting for 'createdAt'
-    if (sortBy.value === 'createdAt') {
-      valA = new Date(valA);
-      valB = new Date(valB);
-    } else if (typeof valA === 'string') {
-      // Case-insensitive string comparison
-      valA = valA.toLowerCase();
-      valB = valB.toLowerCase();
-    }
-
-    let comparison = 0;
-    if (valA > valB) {
-      comparison = 1;
-    } else if (valA < valB) {
-      comparison = -1;
-    }
-
-    return sortOrder.value === 'desc' ? (comparison * -1) : comparison;
+  return [...quizzes.value].sort((a, b) => {
+    let valA = sortBy.value === 'createdAt' ? new Date(a[sortBy.value]) : a[sortBy.value].toString().toLowerCase();
+    let valB = sortBy.value === 'createdAt' ? new Date(b[sortBy.value]) : b[sortBy.value].toString().toLowerCase();
+    let cmp = valA > valB ? 1 : valA < valB ? -1 : 0;
+    return sortOrder.value === 'desc' ? -cmp : cmp;
   });
-  return sorted;
 });
 
-// Function to check if the current user created the quiz
-const isCreator = (quiz) => {
-    return auth.user && quiz.createdBy && auth.user._id === quiz.createdBy._id;
-};
+const isCreator = (q) => auth.user && q.createdBy?._id === auth.user._id;
+const isBookmarked = (id) => auth.bookmarkedQuizIds.includes(id);
 
-// Computed property to check if a quiz is bookmarked
-const isBookmarked = (quizId) => {
-    return auth.bookmarkedQuizIds.includes(quizId);
-};
-
-// Function to toggle bookmark status
-const toggleBookmark = async (quizId) => {
-    actionError.value = null; // Clear previous error
-    try {
-        if (isBookmarked(quizId)) {
-            await auth.removeBookmark(quizId);
-        } else {
-            await auth.addBookmark(quizId);
-        }
-        // No need to manually update local state if auth store is reactive
-    } catch (err) {
-        console.error('Failed to toggle bookmark:', err);
-        actionError.value = err.message || 'Could not update bookmark.';
-        // Clear error after some time
-        setTimeout(() => { actionError.value = null; }, 3000);
-    }
-};
-
-// Function to filter quizzes based on search term and update displayedQuizzes
-const performSearch = () => {
-  // Now filter the sorted list
-  const sourceList = sortedQuizzes.value;
-  if (!searchTerm.value) {
-    displayedQuizzes.value = sourceList; // Show all sorted if search is empty
-    return;
+const toggleBookmark = async (id) => {
+  actionError.value = null;
+  try {
+    if (isBookmarked(id)) await auth.removeBookmark(id);
+    else await auth.addBookmark(id);
+  } catch {
+    actionError.value = 'Could not update bookmark.';
+    setTimeout(() => (actionError.value = null), 3000);
   }
-  const lowerSearchTerm = searchTerm.value.toLowerCase();
-  // Ensure quiz.code exists before trying to access its properties
-  displayedQuizzes.value = sourceList.filter(quiz =>
-    quiz.title.toLowerCase().includes(lowerSearchTerm) ||
-    (quiz.code && quiz.code.toLowerCase().includes(lowerSearchTerm))
+};
+
+const performSearch = () => {
+  const list = sortedQuizzes.value;
+  if (!searchTerm.value) return (displayedQuizzes.value = list);
+  const term = searchTerm.value.toLowerCase();
+  displayedQuizzes.value = list.filter(q =>
+    q.title.toLowerCase().includes(term) ||
+    q.code?.toLowerCase().includes(term)
   );
 };
 
-// Trigger search on Enter key press in the input field
-const handleSearchInputKeydown = (event) => {
-  if (event.key === 'Enter') {
-    performSearch();
-  }
-};
-
-// --- Watch for changes in sort options ---
-watch([sortBy, sortOrder], () => {
-  performSearch(); // Re-apply sorting and filtering
-});
+const handleSearchInputKeydown = (e) => { if (e.key === 'Enter') performSearch(); };
+watch([sortBy, sortOrder], performSearch);
 
 onMounted(fetchQuizzes);
 </script>
 
-<template>
-  <div class="quiz-list-container">
-    <h1>Available Quizzes</h1>
-
-    <!-- Search, Sort, and Add Quiz Section -->
-    <div class="controls-section">
-       <!-- Search Input and Button -->
-       <div class="search-container">
-         <input
-           type="text"
-           v-model="searchTerm"
-           placeholder="Search by title or code..."
-           class="search-input"
-           @keydown="handleSearchInputKeydown"
-         />
-         <button @click="performSearch" class="btn-search">Search</button>
-       </div>
-
-       <!-- Sorting Controls -->
-       <div class="sort-container">
-         <label for="sort-by">Sort by:</label>
-         <select id="sort-by" v-model="sortBy" class="sort-select">
-           <option value="title">Title</option>
-           <option value="createdAt">Date Created</option>
-           <!-- Add more options later if needed, e.g., popularity -->
-         </select>
-         <select v-model="sortOrder" class="sort-select">
-           <option value="asc">Ascending</option>
-           <option value="desc">Descending</option>
-         </select>
-       </div>
-
-       <!-- Add Quiz Button -->
-       <router-link to="/quizzes/new" class="btn-add-quiz">Create New Quiz</router-link>
-    </div>
-
-
-    <div v-if="isLoading" class="loading">Loading quizzes...</div>
-    <div v-if="error" class="error-message">{{ error }}</div>
-    <!-- Display bookmark action error -->
-    <div v-if="actionError" class="error-message">{{ actionError }}</div>
-
-    <!-- Use displayedQuizzes in the v-for loop -->
-    <ul v-if="!isLoading && !error && displayedQuizzes.length > 0" class="quiz-list">
-      <li v-for="quiz in displayedQuizzes" :key="quiz._id" class="quiz-item">
-        <h2>{{ quiz.title }}</h2>
-        <p class="quiz-code">Code: <strong>{{ quiz.code }}</strong></p> <!-- Display quiz code -->
-        <p>{{ quiz.description }}</p>
-        <p class="created-by">Created by: {{ quiz.createdBy?.displayName || 'Unknown' }}</p>
-        <div class="quiz-actions">
-          <router-link :to="`/quizzes/${quiz._id}/attempt`" class="btn-take">Take Quiz</router-link>
-           <!-- Add link to view details/leaderboard -->
-          <router-link :to="`/quizzes/${quiz._id}`" class="btn-details">View Details</router-link>
-          <!-- Add Edit button only if user is the creator -->
-          <router-link v-if="isCreator(quiz)" :to="`/quizzes/${quiz._id}/edit`" class="btn-edit">Edit</router-link>
-          <!-- Bookmark Button -->
-          <button @click="toggleBookmark(quiz._id)" :class="['btn-bookmark', { 'bookmarked': isBookmarked(quiz._id) }]">
-            <i :class="isBookmarked(quiz._id) ? 'fas fa-bookmark' : 'far fa-bookmark'"></i> <!-- Font Awesome icons -->
-            {{ isBookmarked(quiz._id) ? 'Bookmarked' : 'Bookmark' }}
-          </button>
-        </div>
-      </li>
-    </ul>
-     <!-- Update message for no results -->
-     <div v-if="!isLoading && !error && displayedQuizzes.length === 0 && searchTerm" class="no-quizzes">
-        No quizzes found matching "{{ searchTerm }}". <button @click="searchTerm = ''; performSearch();" class="btn-clear-search">Clear Search</button>
-    </div>
-     <div v-else-if="!isLoading && !error && quizzes.length === 0" class="no-quizzes">
-        No quizzes available yet. Why not <router-link to="/quizzes/new">create one</router-link>?
-    </div>
-  </div>
-</template>
-
 <style scoped>
-.quiz-list-container {
-  max-width: 900px; /* Wider container */
-  margin: 2rem auto;
+.view-container {
+  min-height: 100vh;
   padding: 2rem;
+  background: transparent;
+}
+.content-wrapper {
+  max-width: 900px;
+  margin: 0 auto;
+  background: rgba(255,255,255,0.85);
+  padding: 2rem;
+  border-radius: 1rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
 h1 {
-    text-align: center;
-    margin-bottom: 2rem;
-    color: #333;
+  text-align: center;
+  color: var(--bg-end);
+  font-family: var(--font-pixel);
+  margin-bottom: 1.5rem;
 }
 
+.status-message, .loading, .error-message {
+  text-align: center;
+  padding: 1rem;
+  font-family: var(--font-pixel);
+}
+.error-message { color: #c62828; }
+
 .controls-section {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 2rem;
-    flex-wrap: wrap; /* Allow wrapping on smaller screens */
-    gap: 1.5rem; /* Increased gap to accommodate sorting */
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
 }
 
 .search-container {
-    flex-grow: 1; /* Allow search bar to take available space */
-    min-width: 200px; /* Adjust min-width if needed */
-    display: flex; /* Use flexbox to align input and button */
-    gap: 0.5rem; /* Add space between input and button */
+  flex: 1;
+  display: flex;
+  gap: 0.5rem;
 }
-
 .search-input {
-    width: 100%; /* Make input take full width of its container */
-    padding: 0.75rem 1rem;
-    font-size: 1rem;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    box-sizing: border-box; /* Include padding and border in element's total width */
-    flex-grow: 1; /* Allow input to grow */
+  flex: 1;
+  padding: 0.6rem;
+  border: 1px solid var(--bg-mid);
+  border-radius: 0.5rem;
+  font-family: var(--font-pixel);
 }
-
+.search-input:focus {
+  outline: none;
+  border-color: var(--bg-end);
+}
 .btn-search {
-    padding: 0.75rem 1rem;
-    background-color: #007bff;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 1rem;
-    transition: background-color 0.2s;
-    white-space: nowrap;
-}
-
-.btn-search:hover {
-    background-color: #0056b3;
+  padding: 0.6rem 1rem;
 }
 
 .sort-container {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    flex-shrink: 0; /* Prevent shrinking */
+  display: flex;
+  gap: 0.5rem;
+  font-family: var(--font-pixel);
 }
-
-.sort-container label {
-    font-size: 0.9rem;
-    color: #555;
-    white-space: nowrap;
-}
-
 .sort-select {
-    padding: 0.5rem 0.75rem;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    font-size: 0.9rem;
-    background-color: #fff;
-}
-
-.add-quiz-section {
-    margin-bottom: 2rem;
-    text-align: right;
+  padding: 0.5rem;
+  border: 1px solid var(--bg-mid);
+  border-radius: 0.5rem;
+  font-family: var(--font-pixel);
 }
 
 .btn-add-quiz {
-    padding: 0.75rem 1.5rem;
-    background-color: #2a9d8f;
-    color: white;
-    text-decoration: none;
-    border-radius: 4px;
-    font-size: 1rem;
-    transition: background-color 0.2s;
-    border: none;
-    cursor: pointer;
-    white-space: nowrap; /* Prevent button text from wrapping */
-}
-
-.btn-add-quiz:hover {
-    background-color: #268c7f;
-}
-
-.loading, .error-message, .no-quizzes {
-  text-align: center;
-  padding: 1.5rem;
-  font-size: 1.1rem;
-  margin-top: 1rem;
-}
-
-.error-message {
-  color: #c62828;
-  background-color: #ffebee;
-  border: 1px solid #ffcdd2;
-  border-radius: 4px;
-  padding: 1rem; /* Ensure padding */
-  margin-bottom: 1rem; /* Add margin */
-  text-align: center;
-}
-
-.no-quizzes {
-    color: #555;
-}
-.no-quizzes a {
-    color: #4361ee;
-    text-decoration: underline;
-}
-
-.no-quizzes button.btn-clear-search {
-    background: none;
-    border: none;
-    color: #007bff;
-    text-decoration: underline;
-    cursor: pointer;
-    padding: 0;
-    font-size: inherit;
+  padding: 0.6rem 1.2rem;
 }
 
 .quiz-list {
@@ -330,139 +212,81 @@ h1 {
   padding: 0;
   display: grid;
   gap: 1.5rem;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); /* Responsive grid */
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
 }
-
 .quiz-item {
-  background-color: #fff;
+  background: rgba(255,255,255,0.9);
   padding: 1.5rem;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border-radius: 1rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
   display: flex;
   flex-direction: column;
-  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-}
-
-.quiz-item:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
 }
 
 .quiz-item h2 {
-  margin-top: 0;
-  margin-bottom: 0.5rem; /* Adjust margin */
-  color: #333;
-  font-size: 1.3rem; /* Slightly larger title */
+  margin: 0;
+  color: var(--bg-end);
+  font-family: var(--font-pixel);
+  margin-bottom: 0.5rem;
 }
-
 .quiz-code {
-    font-size: 0.95rem;
-    color: #555;
-    margin-bottom: 0.75rem; /* Add margin below code */
-    background-color: #f8f9fa;
-    padding: 0.25rem 0.5rem;
-    border-radius: 4px;
-    display: inline-block; /* Make background fit content */
+  background: var(--bg-mid);
+  padding: 0.3rem 0.6rem;
+  border-radius: 0.5rem;
+  font-family: var(--font-pixel);
+  margin-bottom: 0.75rem;
 }
 
-.quiz-code strong {
-    color: #007bff; /* Highlight the code */
-    font-family: monospace; /* Use monospace font for code */
-}
-
-.quiz-item p {
-  color: #555;
-  flex-grow: 1; /* Make description take available space */
+.description {
+  flex: 1;
+  color: var(--text);
   margin-bottom: 1rem;
-  line-height: 1.5;
+  font-family: var(--font-pixel);
 }
 
 .created-by {
-    font-size: 0.9rem;
-    color: #777;
-    margin-bottom: 1rem;
+  font-size: 0.9rem;
+  color: var(--text);
+  margin-bottom: 1rem;
+  font-family: var(--font-pixel);
 }
 
 .quiz-actions {
-  margin-top: auto; /* Push actions to the bottom */
   display: flex;
-  flex-wrap: wrap; /* Allow buttons to wrap on smaller screens */
-  gap: 0.75rem; /* Increased gap */
-  align-items: center; /* Align buttons vertically */
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: auto;
 }
 
-.quiz-actions a {
-  padding: 0.6rem 1.2rem; /* Adjusted padding */
-  border-radius: 4px;
-  text-decoration: none;
-  text-align: center;
-  font-size: 0.9rem;
-  font-weight: 500; /* Slightly bolder text */
+.btn {
+  padding: 0.5rem 1rem;
+  font-family: var(--font-pixel);
+  border-radius: 0.5rem;
   cursor: pointer;
-  transition: background-color 0.2s, color 0.2s, box-shadow 0.2s;
+  transition: background 0.2s;
   border: none;
 }
+.btn.primary { background: var(--bg-end); color: #fff; }
+.btn.primary:hover { background: var(--bg-mid); }
+.btn.secondary { background: var(--bg-mid); color: var(--text); }
+.btn.secondary:hover { background: var(--bg-start); }
 
-.btn-take {
-  background-color: #4361ee;
-  color: white;
+.bookmark-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: transparent;
+  border: 1px solid var(--bg-mid);
+  color: var(--text);
 }
-.btn-take:hover {
-  background-color: #3a56d4;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
+.bookmark-btn:hover { background: var(--bg-mid); }
+.bookmark-btn.bookmarked { background: var(--bg-end); color: #fff; }
 
-.btn-details {
-    background-color: #e9ecef;
-    color: #333;
-    border: 1px solid #ced4da;
+.link-btn {
+  background: none;
+  color: var(--bg-end);
+  text-decoration: underline;
+  padding: 0.5rem;
 }
-.btn-details:hover {
-    background-color: #dee2e6;
-}
-
-.btn-edit {
-    background-color: #ffb703;
-    color: #333;
-}
-.btn-edit:hover {
-    background-color: #fca311;
-}
-
-.btn-bookmark {
-    padding: 0.6rem 1rem; /* Slightly smaller padding */
-    border-radius: 4px;
-    text-decoration: none;
-    text-align: center;
-    font-size: 0.85rem; /* Smaller font size */
-    cursor: pointer;
-    transition: background-color 0.2s, color 0.2s, border-color 0.2s;
-    border: 1px solid #6c757d; /* Default border */
-    background-color: #fff;
-    color: #6c757d;
-    display: inline-flex; /* Align icon and text */
-    align-items: center;
-    gap: 0.4rem; /* Space between icon and text */
-}
-
-.btn-bookmark:hover {
-    background-color: #f8f9fa;
-    border-color: #5a6268;
-    color: #5a6268;
-}
-
-.btn-bookmark.bookmarked {
-    background-color: #ffc107; /* Yellow when bookmarked */
-    border-color: #ffc107;
-    color: #333;
-}
-
-.btn-bookmark.bookmarked:hover {
-    background-color: #e0a800;
-    border-color: #e0a800;
-}
-
-/* Add Font Awesome if not already included globally */
-/* @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css'); */
 
 </style>
