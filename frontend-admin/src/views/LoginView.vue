@@ -1,33 +1,28 @@
 <template>
-  <div class="flex items-center justify-center min-h-screen bg-gray-100">
-    <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md">
-      <h1 class="text-3xl font-bold text-center mb-6">Frontend Admin Login</h1>
-      <form @submit.prevent="handleLogin">
-        <div class="mb-4">
-          <label for="email" class="block text-gray-700 mb-2">Admin Email</label>
+  <div class="view-container login-container">
+    <div class="login-card">
+      <h1>Admin Login</h1>
+      <form @submit.prevent="handleLogin" class="login-form">
+        <div class="form-group">
+          <label for="email">Email</label>
           <input
-              v-model="email"
-              type="email"
-              id="email"
-              required
-              class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring focus:border-blue-300"
+            v-model="email"
+            type="email"
+            id="email"
+            required
           />
         </div>
-        <div class="mb-6">
-          <label for="password" class="block text-gray-700 mb-2">Password</label>
+        <div class="form-group">
+          <label for="password">Password</label>
           <input
-              v-model="password"
-              type="password"
-              id="password"
-              required
-              class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring focus:border-blue-300"
+            v-model="password"
+            type="password"
+            id="password"
+            required
           />
         </div>
-        <button
-            type="submit"
-            class="w-full bg-green-500 text-white py-2 rounded-xl hover:bg-green-600 transition duration-300"
-        >
-          Login as Admin
+        <button type="submit" class="btn-primary" :disabled="isLoading">
+          {{ isLoading ? 'Logging in...' : 'Login as Admin' }}
         </button>
       </form>
     </div>
@@ -40,15 +35,86 @@ import { useAuthStore } from '@/stores/auth';
 
 const email = ref('');
 const password = ref('');
+const isLoading = ref(false);
 const authStore = useAuthStore();
 
 const handleLogin = async () => {
-  await authStore.login({ email: email.value, password: password.value });
+  isLoading.value = true;
+  try {
+    await authStore.login({ email: email.value, password: password.value });
+  } finally {
+    isLoading.value = false;
+  }
 };
 </script>
 
 <style scoped>
-body {
-  font-family: 'Inter', sans-serif;
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  padding: 2rem;
+}
+
+.login-card {
+  background: rgba(255,255,255,0.9);
+  padding: 2rem;
+  border-radius: 1rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  width: 100%;
+  max-width: 400px;
+  font-family: var(--font-pixel);
+}
+
+.login-card h1 {
+  text-align: center;
+  margin-bottom: 1.5rem;
+  color: var(--bg-end);
+}
+
+.login-form .form-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 1rem;
+}
+
+.login-form label {
+  margin-bottom: 0.5rem;
+  color: var(--text);
+}
+
+.login-form input {
+  padding: 0.6rem;
+  border: 1px solid #ccc;
+  border-radius: 0.5rem;
+  font-family: var(--font-pixel);
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.login-form input:focus {
+  border-color: var(--bg-end);
+}
+
+.btn-primary {
+  width: 100%;
+  padding: 0.8rem;
+  background: var(--bg-end);
+  color: #fff;
+  border: none;
+  border-radius: 0.5rem;
+  font-family: var(--font-pixel);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--bg-mid);
 }
 </style>

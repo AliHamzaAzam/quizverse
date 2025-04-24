@@ -1,8 +1,8 @@
 <template>
   <div class="dashboard-container">
     <h1>Admin Dashboard</h1>
-    <div v-if="isLoading" class="loading">Loading stats...</div>
-    <div v-if="error" class="error-message">{{ error }}</div>
+    <div v-if="isLoading" class="status-message">Loading stats...</div>
+    <div v-if="error" class="status-message error">{{ error }}</div>
     <div v-if="!isLoading && !error && stats" class="stats-grid">
       <div class="stat-card">
         <h2>Total Users</h2>
@@ -12,7 +12,6 @@
         <h2>Admin Users</h2>
         <p>{{ stats.adminCount }}</p>
       </div>
-      <!-- Add more stat cards as needed -->
       <div class="stat-card">
         <h2>Total Quizzes</h2>
         <p>{{ stats.quizCount }}</p>
@@ -27,7 +26,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import api from '@/utils/axios'; // Use the configured axios instance
+import api from '@/utils/axios';
 
 const stats = ref(null);
 const isLoading = ref(true);
@@ -53,23 +52,31 @@ onMounted(fetchStats);
 <style scoped>
 .dashboard-container {
   padding: 2rem;
+  background: rgba(255,255,255,0.85);
+  border-radius: 1rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  font-family: var(--font-pixel);
 }
 
 h1 {
+  text-align: center;
+  color: var(--bg-end);
   margin-bottom: 1.5rem;
+  font-size: 1.5rem;
 }
 
-.loading, .error-message {
+.status-message {
   text-align: center;
   padding: 1rem;
   margin-top: 1rem;
+  color: var(--text);
+  font-family: var(--font-pixel);
 }
-
-.error-message {
-  color: #dc3545;
-  background-color: #f8d7da;
-  border: 1px solid #f5c6cb;
-  border-radius: 4px;
+.status-message.error {
+  background: #ffebee;
+  color: #c62828;
+  border: 1px solid #ffcdd2;
+  border-radius: 0.5rem;
 }
 
 .stats-grid {
@@ -79,24 +86,25 @@ h1 {
 }
 
 .stat-card {
-  background-color: #fff;
+  background: rgba(255,255,255,0.9);
   padding: 1.5rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border-radius: 1rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   text-align: center;
+  font-family: var(--font-pixel);
 }
 
 .stat-card h2 {
-  margin-top: 0;
+  margin: 0;
   margin-bottom: 0.5rem;
+  color: var(--bg-mid);
   font-size: 1.1rem;
-  color: #6c757d;
 }
 
 .stat-card p {
+  margin: 0;
   font-size: 2rem;
   font-weight: bold;
-  color: #343a40;
-  margin: 0;
+  color: var(--text);
 }
 </style>

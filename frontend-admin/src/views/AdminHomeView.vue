@@ -1,3 +1,30 @@
+<template>
+  <div class="view-container admin-layout">
+    <aside class="admin-sidebar">
+      <h2>Admin Panel</h2>
+      <nav>
+        <ul>
+          <li><router-link to="/admin" class="nav-link">Dashboard</router-link></li>
+          <li><router-link to="/admin/users" class="nav-link">Users</router-link></li>
+          <!-- Add more admin navigation items here -->
+        </ul>
+      </nav>
+    </aside>
+    <main class="admin-content">
+      <header class="admin-header">
+        <h1>QuizVerse Admin</h1>
+        <div class="admin-user">
+          <span>{{ user?.name || 'Admin' }}</span>
+          <button @click="logout" class="btn-logout">Logout</button>
+        </div>
+      </header>
+      <div class="admin-container">
+        <router-view />
+      </div>
+    </main>
+  </div>
+</template>
+
 <script setup>
 import { useAuthStore } from '@/stores/auth.js';
 import { computed } from 'vue';
@@ -13,37 +40,6 @@ const logout = () => {
 };
 </script>
 
-<template>
-  <div class="admin-layout">
-    <aside class="admin-sidebar">
-      <h2>Admin Panel</h2>
-      <nav>
-        <ul>
-          <li>
-            <router-link to="/admin">Dashboard</router-link>
-          </li>
-          <li>
-            <router-link to="/admin/users">Users</router-link>
-          </li>
-          <!-- Add more admin navigation items here -->
-        </ul>
-      </nav>
-    </aside>
-    <main class="admin-content">
-      <header class="admin-header">
-        <h1>QuizVerse Admin</h1>
-        <div class="admin-user">
-          <span>{{ user?.name || 'Admin' }}</span>
-          <button @click="logout">Logout</button>
-        </div>
-      </header>
-      <div class="admin-container">
-        <router-view></router-view>
-      </div>
-    </main>
-  </div>
-</template>
-
 <style scoped>
 .admin-layout {
   display: flex;
@@ -51,32 +47,45 @@ const logout = () => {
 }
 
 .admin-sidebar {
-  width: 250px;
-  background-color: #1a1a2e;
-  color: white;
-  padding: 1rem;
+  width: 220px;
+  background-color: var(--bg-end);
+  color: #fff;
+  padding: 1.5rem 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-family: var(--font-pixel);
 }
 
 .admin-sidebar h2 {
   margin-bottom: 2rem;
-  text-align: center;
+  font-size: 1.2rem;
+  text-transform: uppercase;
 }
 
 .admin-sidebar ul {
   list-style: none;
   padding: 0;
+  width: 100%;
 }
 
 .admin-sidebar li {
-  margin-bottom: 0.5rem;
+  margin-bottom: 1rem;
 }
 
-.admin-sidebar a {
+.admin-sidebar .nav-link {
   display: block;
-  padding: 0.75rem 1rem;
-  color: white;
+  width: 100%;
+  text-align: center;
+  padding: 0.5rem 0;
+  color: #fff;
   text-decoration: none;
-  border-radius: 4px;
+  border-radius: 0.5rem;
+  transition: background 0.2s;
+}
+
+.admin-sidebar .nav-link:hover {
+  background-color: var(--bg-mid);
 }
 
 .admin-content {
@@ -90,14 +99,15 @@ const logout = () => {
   justify-content: space-between;
   align-items: center;
   padding: 1rem 2rem;
-  background-color: white;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  background: rgba(255,255,255,0.85);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  font-family: var(--font-pixel);
 }
 
-.admin-container {
-  flex: 1;
-  padding: 2rem;
-  background-color: #f5f5f5;
+.admin-header h1 {
+  margin: 0;
+  color: var(--bg-end);
 }
 
 .admin-user {
@@ -106,12 +116,24 @@ const logout = () => {
   gap: 1rem;
 }
 
-.admin-user button {
+.btn-logout {
   padding: 0.5rem 1rem;
-  background-color: #e94560;
-  color: white;
+  font-family: var(--font-pixel);
+  background: #e63946;
+  color: #fff;
   border: none;
-  border-radius: 4px;
+  border-radius: 0.5rem;
   cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-logout:hover {
+  background: #d62828;
+}
+
+.admin-container {
+  flex: 1;
+  padding: 2rem;
+  background: transparent;
 }
 </style>

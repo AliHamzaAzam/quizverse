@@ -4,7 +4,13 @@ import { useAuthStore } from '@/stores/auth';
 const routes = [
     {
         path: '/',
-        redirect: '/dashboard'
+        redirect: '/home'  // Changed to redirect to home page by default
+    },
+    {
+        path: '/home',
+        name: 'Home',  // Define a route for Home
+        component: () => import('@/views/Home.vue'), // Ensure Home.vue exists in the views folder
+        meta: { requiresAuth: false, title: 'Home' }
     },
     {
         path: '/login',

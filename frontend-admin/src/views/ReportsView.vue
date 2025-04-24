@@ -132,27 +132,34 @@ onMounted(fetchReports);
 <style scoped>
 .reports-container {
   padding: 2rem;
+  min-height: 100vh;
+  background: linear-gradient(to bottom right, #1a1a2e, #16213e);
+  color: #fff;
+  font-family: 'Pixelify Sans', sans-serif;
 }
 
 h1 {
   margin-bottom: 1.5rem;
+  font-size: 2.5rem;
+  color: #e94560;
 }
 
 .loading, .error-message, .no-reports {
   text-align: center;
   padding: 1rem;
   margin-top: 1rem;
+  font-size: 1.1rem;
 }
 
 .error-message {
-  color: #dc3545;
-  background-color: #f8d7da;
+  color: #fff;
+  background-color: rgba(220, 53, 69, 0.8);
   border: 1px solid #f5c6cb;
   border-radius: 4px;
 }
 
 .no-reports {
-  color: #6c757d;
+  color: #adb5bd;
 }
 
 .reports-table-container {
@@ -163,44 +170,49 @@ h1 {
   width: 100%;
   border-collapse: collapse;
   margin-top: 1rem;
-  background-color: #fff;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  background-color: #0f3460;
+  color: #fff;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
 .reports-table th,
 .reports-table td {
   padding: 0.75rem 1rem;
   text-align: left;
-  border-bottom: 1px solid #dee2e6;
+  border-bottom: 1px solid #2c2c54;
   vertical-align: middle;
 }
 
 .reports-table th {
-  background-color: #f8f9fa;
+  background-color: #16213e;
   font-weight: 600;
+  color: #e94560;
 }
 
 .reports-table tbody tr:hover {
-  background-color: #f1f3f5;
+  background-color: #1a1a40;
 }
 
 .reports-table select {
-  padding: 0.3rem 0.5rem;
-  border: 1px solid #ced4da;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid #495057;
   border-radius: 4px;
+  background-color: #212529;
+  color: #fff;
 }
 
 .reports-table button {
-  padding: 0.3rem 0.7rem;
+  padding: 0.4rem 0.8rem;
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: background-color 0.2s ease;
+  font-weight: bold;
 }
 
 .btn-delete {
-  background-color: #dc3545;
-  color: white;
+  background-color: #e94560;
+  color: #fff;
 }
 
 .btn-delete:hover {
@@ -209,18 +221,18 @@ h1 {
 
 .btn-delete:disabled,
 .reports-table select:disabled {
-  background-color: #e9ecef;
+  background-color: #495057;
   cursor: not-allowed;
 }
 
 /* Optional: Style rows based on status */
 .status-pending td:first-child {
-  border-left: 4px solid #ffc107; /* Yellow */
+  border-left: 4px solid #ffc107;
 }
 .status-resolved td:first-child {
-  border-left: 4px solid #28a745; /* Green */
+  border-left: 4px solid #28a745;
 }
 .status-dismissed td:first-child {
-  border-left: 4px solid #6c757d; /* Gray */
+  border-left: 4px solid #6c757d;
 }
 </style>

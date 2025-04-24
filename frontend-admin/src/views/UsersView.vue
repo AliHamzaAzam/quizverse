@@ -1,10 +1,12 @@
 <template>
-  <div class="users-container">
-    <h1>Manage Users</h1>
-    <div v-if="isLoading" class="loading">Loading users...</div>
-    <div v-if="error" class="error-message">{{ error }}</div>
-    <div v-if="!isLoading && !error && users.length > 0" class="users-table-container">
-      <table class="users-table">
+  <div class="page-container">
+    <h1 class="page-title">Manage Users</h1>
+
+    <div v-if="isLoading" class="status-message">Loading users...</div>
+    <div v-if="error" class="status-message error">{{ error }}</div>
+
+    <div v-if="!isLoading && !error && users.length > 0" class="card">
+      <table class="styled-table">
         <thead>
           <tr>
             <th>Email</th>
@@ -26,18 +28,16 @@
             </td>
             <td>{{ formatDate(user.createdAt) }}</td>
             <td>
-              <button @click="deleteUser(user._id)" class="btn-delete" :disabled="isDeleting === user._id">
+              <button @click="deleteUser(user._id)" class="btn danger" :disabled="isDeleting === user._id">
                 {{ isDeleting === user._id ? 'Deleting...' : 'Delete' }}
               </button>
-              <!-- Add other actions like view details if needed -->
             </td>
           </tr>
         </tbody>
       </table>
     </div>
-    <div v-if="!isLoading && !error && users.length === 0" class="no-users">
-      No users found.
-    </div>
+
+    <div v-if="!isLoading && !error && users.length === 0" class="status-message">No users found.</div>
   </div>
 </template>
 
@@ -48,8 +48,8 @@ import api from '@/utils/axios';
 const users = ref([]);
 const isLoading = ref(true);
 const error = ref(null);
-const isUpdatingRole = ref(null); // Track which user's role is being updated
-const isDeleting = ref(null); // Track which user is being deleted
+const isUpdatingRole = ref(null);
+const isDeleting = ref(null);
 
 const fetchUsers = async () => {
   isLoading.value = true;
@@ -58,7 +58,6 @@ const fetchUsers = async () => {
     const { data } = await api.get('/api/admin/users');
     users.value = data;
   } catch (err) {
-    console.error('Failed to load users:', err);
     error.value = err.response?.data?.message || 'Failed to load users.';
   } finally {
     isLoading.value = false;
@@ -67,34 +66,25 @@ const fetchUsers = async () => {
 
 const updateUserRole = async (user) => {
   isUpdatingRole.value = user._id;
-  error.value = null; // Clear previous errors
+  error.value = null;
   try {
     await api.patch(`/api/admin/users/${user._id}/role`, { role: user.role });
-    // Optionally show a success message
-    console.log(`Updated role for ${user.email} to ${user.role}`);
   } catch (err) {
-    console.error('Failed to update user role:', err);
     error.value = err.response?.data?.message || 'Failed to update user role.';
-    // Revert the change in the UI if the API call failed
-    await fetchUsers(); // Refetch to get the original state
+    await fetchUsers(); // Revert
   } finally {
     isUpdatingRole.value = null;
   }
 };
 
 const deleteUser = async (userId) => {
-  if (!confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
-    return;
-  }
+  if (!confirm('Are you sure you want to delete this user?')) return;
   isDeleting.value = userId;
   error.value = null;
   try {
     await api.delete(`/api/admin/users/${userId}`);
-    // Remove user from the local list
     users.value = users.value.filter(u => u._id !== userId);
-    console.log(`Deleted user ${userId}`);
   } catch (err) {
-    console.error('Failed to delete user:', err);
     error.value = err.response?.data?.message || 'Failed to delete user.';
   } finally {
     isDeleting.value = null;
@@ -103,98 +93,97 @@ const deleteUser = async (userId) => {
 
 const formatDate = (dateString) => {
   if (!dateString) return 'N/A';
-  const options = { year: 'numeric', month: 'short', day: 'numeric' };
-  return new Date(dateString).toLocaleDateString(undefined, options);
+  return new Date(dateString).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 };
 
 onMounted(fetchUsers);
 </script>
 
 <style scoped>
-.users-container {
+.page-container {
   padding: 2rem;
 }
 
-h1 {
+.page-title {
+  font-size: 1.75rem;
   margin-bottom: 1.5rem;
 }
 
-.loading, .error-message, .no-users {
+.status-message {
   text-align: center;
-  padding: 1rem;
-  margin-top: 1rem;
+  margin: 1.5rem 0;
+  padding: 0.75rem;
+  border-radius: 6px;
+  background-color: #f1f3f5;
+  color: #495057;
 }
 
-.error-message {
-  color: #dc3545;
+.status-message.error {
   background-color: #f8d7da;
+  color: #721c24;
   border: 1px solid #f5c6cb;
-  border-radius: 4px;
 }
 
-.no-users {
-  color: #6c757d;
+.card {
+  background: white;
+  border-radius: 8px;
+  padding: 1rem;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  overflow-x: auto;
 }
 
-.users-table-container {
-  overflow-x: auto; /* Allow horizontal scrolling on small screens */
-}
-
-.users-table {
+.styled-table {
   width: 100%;
   border-collapse: collapse;
-  margin-top: 1rem;
-  background-color: #fff;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  font-size: 0.95rem;
 }
 
-.users-table th,
-.users-table td {
+.styled-table th,
+.styled-table td {
   padding: 0.75rem 1rem;
   text-align: left;
   border-bottom: 1px solid #dee2e6;
 }
 
-.users-table th {
+.styled-table th {
   background-color: #f8f9fa;
   font-weight: 600;
 }
 
-.users-table tbody tr:hover {
+.styled-table tr:hover {
   background-color: #f1f3f5;
 }
 
-.users-table select {
-  padding: 0.3rem 0.5rem;
+select {
+  padding: 0.3rem 0.6rem;
+  border-radius: 4px;
   border: 1px solid #ced4da;
-  border-radius: 4px;
 }
 
-.users-table button {
-  padding: 0.3rem 0.7rem;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.btn-delete {
-  background-color: #dc3545;
-  color: white;
-}
-
-.btn-delete:hover {
-  background-color: #c82333;
-}
-
-.btn-delete:disabled {
+select:disabled {
   background-color: #e9ecef;
   cursor: not-allowed;
 }
 
-.users-table select:disabled {
-    background-color: #e9ecef;
-    cursor: not-allowed;
+.btn {
+  padding: 0.3rem 0.8rem;
+  border-radius: 4px;
+  cursor: pointer;
+  border: none;
+  transition: background-color 0.2s;
 }
 
+.btn.danger {
+  background-color: #dc3545;
+  color: white;
+}
+
+.btn.danger:hover {
+  background-color: #c82333;
+}
+
+.btn:disabled {
+  background-color: #e9ecef;
+  cursor: not-allowed;
+}
 </style>
