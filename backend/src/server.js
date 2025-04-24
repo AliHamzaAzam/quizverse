@@ -46,7 +46,10 @@ app.use(cookieParser());
 app.use(express.json());
 
 // 4) session (after cookieParser & CORS)
-const isProd = process.env.NODE_ENV === 'production';
+// Modify the isProd check in server.js
+const isProd = process.env.NODE_ENV === 'production' ||
+    process.env.RAILWAY_STATIC_URL !== undefined ||
+    (process.env.CLIENT_URL && process.env.CLIENT_URL.includes('vercel.app'));
 
 app.use(session({
   secret: process.env.JWT_SECRET,
