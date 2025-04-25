@@ -16,7 +16,7 @@ export default defineConfig({
   server: {
     port: 5174,
     proxy: {
-      '/api': 'http://localhost:5001'
+      '/api': import.meta.env.VITE_SERVER_URL || 'http://localhost:5001', // Use the server URL from env variable
     }
   }
 })
