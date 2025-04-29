@@ -18,8 +18,7 @@ const signupSchema = z.object({
   firstName: z.string().min(1),
   lastName: z.string().min(1),
   displayName: z.string().min(1),
-  age: z.string()
-    .refine(val => !isNaN(parseInt(val)) && parseInt(val) > 0, { message: "Age must be a positive number" }),
+  age: z.string().refine(val => !isNaN(parseInt(val)) && parseInt(val) > 0, { message: "Age must be a positive number" }),
   accentColor: z.string().optional()
 });
 

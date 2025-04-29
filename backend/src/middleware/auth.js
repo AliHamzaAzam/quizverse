@@ -29,8 +29,12 @@ export const authenticate = async (req, res, next) => {
   }
 };
 
-// Authorize admin only
-export const isAdmin = (req, res, next) => {
-  if (req.user.role !== 'admin') return res.status(403).json({ message: 'Admin only' });
-  next();
+export const isAdmin = async (req, res, next) => {
+  try {
+    const u = await User.findById(req.userId);
+    if (!u || u.role !== 'admin') return res.status(403).json({ message: 'Admin only' });
+    next();
+  } catch {
+    res.status(500).json({ message: 'Server error' });
+  }
 };

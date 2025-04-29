@@ -1,17 +1,14 @@
 import express from 'express';
 import User from '../models/User.js';
-import Quiz from '../models/Quiz.js';
-import Attempt from '../models/Attempt.js';
-import Report from '../models/Report.js';
+import Quiz from '../models/Quiz.js'; // Import Quiz Model
+import Attempt from '../models/Attempt.js'; // Import Attempt Model
+import Report from '../models/Report.js'; // Import Report Model
 import { validateAdminOrigin } from '../middleware/admin.js';
 import { authenticate, isAdmin } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// Apply authentication, admin check, and origin validation
 router.use(authenticate, isAdmin, validateAdminOrigin);
-
-// --- User Management ---
 
 // Get all users
 router.get('/users', async (req, res) => {
