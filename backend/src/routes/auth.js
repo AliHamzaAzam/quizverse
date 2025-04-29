@@ -18,9 +18,11 @@ const signupSchema = z.object({
   firstName: z.string().min(1),
   lastName: z.string().min(1),
   displayName: z.string().min(1),
-  age: z.string().refine(val => !isNaN(parseInt(val)) && parseInt(val) > 0, { message: "Age must be a positive number" }),
+  age: z.string()
+    .refine(val => !isNaN(parseInt(val)) && parseInt(val) > 0, { message: "Age must be a positive number" }),
   accentColor: z.string().optional()
 });
+
 
 // Helper to generate JWTs
 function generateToken(user, expiresIn, isRefresh = false) {
@@ -31,9 +33,9 @@ function generateToken(user, expiresIn, isRefresh = false) {
   );
 }
 
-// Helper to set cookies with the correct SameSite / Secure flags
-function setAuthCookies(res, accessToken, refreshToken) {
-  const isProd = process.env.NODE_ENV === 'production';
+  const isProd = process.env.NODE_ENV === 'production' ||
+      process.env.RAILWAY_STATIC_URL !== undefined ||
+      (process.env.CLIENT_URL && process.env.CLIENT_URL.includes('vercel.app'));
 
   res.cookie('accessToken', accessToken, {
     httpOnly: true,

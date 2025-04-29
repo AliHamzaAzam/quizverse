@@ -16,7 +16,12 @@ export default defineConfig({
   server: {
     port: 5174,
     proxy: {
-      '/api': 'http://localhost:5001'
+      // Use .env variable for server URL
+      '/api': {
+        target: process.env.VITE_SERVER_URL || 'http://localhost:5001',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, '')
+      }
     }
   }
 })

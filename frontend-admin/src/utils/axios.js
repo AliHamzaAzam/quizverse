@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'http://localhost:5001', // Your backend API URL
+  baseURL: import.meta.env.VITE_SERVER_URL || 'http://localhost:5001', // Use the server URL from env variable
   withCredentials: true, // Important for sending cookies
 });
 
