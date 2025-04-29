@@ -1,239 +1,235 @@
 import express from 'express';
 import Quiz from '../models/Quiz.js';
-import Feedback from '../models/Feedback.js'; // Import Feedback model
-import User from '../models/User.js'; // Import User model
+import Attempt from '../models/Attempt.js';
+import Feedback from '../models/Feedback.js';
+import User from '../models/User.js';
+import { authenticate } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// Helper function to generate a random alphanumeric code
+// Protect all quiz routes
+router.use(authenticate);
+
+// Helper: generate a 4-character alphanumeric code
 function generateCode(length = 4) {
-  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   let result = '';
   for (let i = 0; i < length; i++) {
-    result += characters.charAt(Math.floor(Math.random() * characters.length));
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
   }
   return result;
 }
 
-// Create a quiz (any authenticated user)
+// ─── Create a new quiz ────────────────────────────────────────────────────────
 router.post('/', async (req, res) => {
   try {
-    // Include timeLimit and category from request body
     const { title, description, questions, timeLimit, category } = req.body;
+    // questions may include hints: [] now
 
-    let uniqueCode = '';
-    let codeExists = true;
-    let attempts = 0; // Prevent infinite loop in rare cases
-    // Ensure the generated code is unique
-    while (codeExists && attempts < 10) { // Limit attempts
-      uniqueCode = generateCode(4);
-      const existingQuiz = await Quiz.findOne({ code: uniqueCode });
-      if (!existingQuiz) {
-        codeExists = false;
-      }
-      attempts++;
+    // Generate a unique 4-char code
+    let code, exists;
+    for (let i = 0; i < 10; i++) {
+      code = generateCode();
+      exists = await Quiz.exists({ code });
+      if (!exists) break;
     }
+    if (exists) return res.status(500).json({ message: 'Could not generate unique code' });
 
-    if (codeExists) {
-        // If we still couldn't find a unique code after several attempts
-        return res.status(500).json({ message: 'Failed to generate a unique quiz code. Please try again.' });
-    }
-
-    const q = await Quiz.create({
+    const quiz = await Quiz.create({
       title,
       description,
-      code: uniqueCode, // Add the generated unique code
+      code,
       questions,
-      category, // Include category
-      timeLimit: timeLimit ? parseInt(timeLimit, 10) : null, // Ensure it's a number or null
+      category,
+      timeLimit: timeLimit != null ? parseInt(timeLimit, 10) : null,
       createdBy: req.userId
     });
-    res.status(201).json(q);
+
+    res.status(201).json(quiz);
   } catch (e) {
-    // Add more specific error handling for duplicate key if needed, though the loop should prevent it
-    if (e.code === 11000) { // Handle potential rare race condition for duplicate code
-        return res.status(400).json({ message: 'Failed to generate unique code, please try again.', error: e.message });
-    }
+    if (e.code === 11000) return res.status(400).json({ message: 'Duplicate code, retry' });
     res.status(400).json({ message: 'Invalid data', error: e.message });
   }
 });
 
-// Read all quizzes (hide answers)
-router.get('/', async (req, res) => {
-  const { sortBy, sortOrder, category, createdBy, bookmarkedBy } = req.query;
-  let query = Quiz.find();
-  let sortOptions = {};
-
-  // Filtering
-  if (category) {
-    query = query.where('category').equals(category);
-  }
-  if (createdBy) {
-    query = query.where('createdBy').equals(createdBy);
-  }
-  if (bookmarkedBy) {
-    // Find the user and get their bookmarked quiz IDs
-    try {
-      const user = await User.findById(bookmarkedBy).select('bookmarkedQuizzes');
-      if (user) {
-        query = query.where('_id').in(user.bookmarkedQuizzes);
-      } else {
-        // If user not found, return empty list or handle as appropriate
-        return res.json([]);
-      }
-    } catch (err) {
-      console.error("Error fetching user for bookmarks:", err);
-      return res.status(500).json({ message: 'Error filtering by bookmarks' });
-    }
-  }
-
-  // Sorting
-  const validSortFields = ['title', 'createdAt', 'attemptCount', 'category'];
-  if (sortBy && validSortFields.includes(sortBy)) {
-    sortOptions[sortBy] = (sortOrder === 'asc') ? 1 : -1; // Default to desc
-  } else {
-    sortOptions['createdAt'] = -1; // Default sort by newest
-  }
-  query = query.sort(sortOptions);
-
+// ─── Get a hint for a question ───────────────────────────────────────────────
+router.post('/:quizId/questions/:questionId/hint', async (req, res) => {
   try {
-    // Populate createdBy field with displayName only
-    const quizzes = await query.populate('createdBy', 'displayName').exec();
-    res.json(quizzes);
-  } catch (err) {
-    console.error("Error fetching quizzes:", err);
+    const { quizId, questionId } = req.params;
+    const quiz = await Quiz.findById(quizId);
+    if (!quiz) return res.status(404).json({ message: 'Quiz not found' });
+
+    const question = quiz.questions.id(questionId);
+    if (!question) return res.status(404).json({ message: 'Question not found' });
+
+    // Find or create this user's attempt on the quiz
+    let attempt = await Attempt.findOne({ user: req.userId, quiz: quizId });
+    if (!attempt) {
+      attempt = await Attempt.create({ user: req.userId, quiz: quizId, answers: [], hintsUsed: [], score: 0 });
+    }
+
+    // Determine how many hints already used for this question
+    const usage = attempt.hintsUsed.find(h => h.questionId.equals(questionId));
+    const usedCount = usage ? usage.countUsed : 0;
+
+    if (usedCount >= question.hints.length) {
+      return res.status(400).json({ message: 'No hints left for this question' });
+    }
+
+    // Return next hint
+    const hint = question.hints[usedCount];
+    if (usage) {
+      usage.countUsed++;
+    } else {
+      attempt.hintsUsed.push({ questionId, countUsed: 1 });
+    }
+    await attempt.save();
+
+    res.json({ hint });
+  } catch (e) {
+    console.error('Hint error:', e);
+    res.status(500).json({ message: 'Error fetching hint' });
+  }
+});
+
+// ─── List all active quizzes ─────────────────────────────────────────────────
+router.get('/', async (req, res) => {
+  try {
+    const { sortBy, sortOrder, category, createdBy, bookmarkedBy } = req.query;
+
+    let q = Quiz.find({ status: 'active' });
+    if (category)    q = q.where('category').equals(category);
+    if (createdBy)   q = q.where('createdBy').equals(createdBy);
+    if (bookmarkedBy) {
+      const user = await User.findById(bookmarkedBy).select('bookmarkedQuizzes');
+      q = user ? q.where('_id').in(user.bookmarkedQuizzes) : q.where('_id').in([]);
+    }
+
+    // Sorting
+    const valid = ['title','createdAt','attemptCount','category'];
+    const sortField = valid.includes(sortBy) ? sortBy : 'createdAt';
+    const order = sortOrder === 'asc' ? 1 : -1;
+    q = q.sort({ [sortField]: order });
+
+    const list = await q.populate('createdBy','displayName').exec();
+    res.json(list);
+  } catch (e) {
+    console.error('Fetch quizzes error:', e);
     res.status(500).json({ message: 'Failed to retrieve quizzes' });
   }
 });
 
-// Read quizzes created by the current user
+// ─── List quizzes created by me ──────────────────────────────────────────────
 router.get('/my-quizzes', async (req, res) => {
-  if (!req.userId) {
-    return res.status(401).json({ message: 'Authentication required' });
-  }
   try {
-    const userQuizzes = await Quiz.find({ createdBy: req.userId })
-                                  .select('-questions.correctOption') // Optionally hide answers even for owner in this list view
-                                  .sort({ createdAt: -1 }); // Sort by newest first
-    res.json(userQuizzes);
-  } catch (error) {
-    console.error('Error fetching user quizzes:', error);
+    const list = await Quiz.find({ createdBy: req.userId })
+      .select('-questions.correctOption')
+      .sort({ createdAt: -1 });
+    res.json(list);
+  } catch (e) {
+    console.error('My quizzes error:', e);
     res.status(500).json({ message: 'Failed to fetch your quizzes' });
   }
 });
 
-// GET feedback for a specific quiz (only owner/admin)
+// ─── Get quiz by code ─────────────────────────────────────────────────────────
+router.get('/code/:code', async (req, res) => {
+  try {
+    const quiz = await Quiz.findOne({ code: req.params.code }).populate('createdBy','displayName');
+    if (!quiz) return res.status(404).json({ message: 'Quiz not found' });
+
+    const isOwner = quiz.createdBy._id.equals(req.userId);
+    const isAdmin = req.user.role === 'admin';
+    if (!isOwner && !isAdmin) {
+      const safe = quiz.toObject();
+      safe.questions.forEach(q => delete q.correctOption);
+      return res.json(safe);
+    }
+
+    res.json(quiz);
+  } catch (e) {
+    console.error('Get by code error:', e);
+    res.status(500).json({ message: 'Error retrieving quiz' });
+  }
+});
+
+// ─── Get single quiz by ID ───────────────────────────────────────────────────
+router.get('/:id', async (req, res) => {
+  try {
+    const quiz = await Quiz.findById(req.params.id).populate('createdBy','displayName');
+    if (!quiz) return res.status(404).json({ message: 'Quiz not found' });
+
+    const isOwner = quiz.createdBy._id.equals(req.userId);
+    const isAdmin = req.user.role === 'admin';
+    if (!isOwner && !isAdmin) {
+      const safe = quiz.toObject();
+      safe.questions.forEach(q => delete q.correctOption);
+      return res.json(safe);
+    }
+
+    res.json(quiz);
+  } catch (e) {
+    console.error('Get quiz error:', e);
+    res.status(500).json({ message: 'Error retrieving quiz' });
+  }
+});
+
+// ─── Update a quiz ───────────────────────────────────────────────────────────
+router.patch('/:id', async (req, res) => {
+  try {
+    const quiz = await Quiz.findById(req.params.id);
+    if (!quiz) return res.status(404).json({ message: 'Quiz not found' });
+    if (!quiz.createdBy.equals(req.userId) && req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Forbidden' });
+    }
+
+    // Only update allowed fields
+    ['title','description','questions','category','timeLimit','status'].forEach(f => {
+      if (req.body[f] !== undefined) quiz[f] = req.body[f];
+    });
+    await quiz.save();
+    res.json(quiz);
+  } catch (e) {
+    console.error('Update quiz error:', e);
+    res.status(500).json({ message: 'Error updating quiz' });
+  }
+});
+
+// ─── Delete a quiz ───────────────────────────────────────────────────────────
+router.delete('/:id', async (req, res) => {
+  try {
+    const quiz = await Quiz.findById(req.params.id);
+    if (!quiz) return res.status(404).json({ message: 'Quiz not found' });
+    if (!quiz.createdBy.equals(req.userId) && req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Forbidden' });
+    }
+    await quiz.deleteOne();
+    res.status(204).end();
+  } catch (e) {
+    console.error('Delete quiz error:', e);
+    res.status(500).json({ message: 'Error deleting quiz' });
+  }
+});
+
+// ─── Get feedback for a quiz ─────────────────────────────────────────────────
 router.get('/:quizId/feedback', async (req, res) => {
   try {
-    const quizId = req.params.quizId;
-    const userId = req.userId;
-    const userRole = req.user?.role; // Assuming role is populated in auth middleware
+    const quiz = await Quiz.findById(req.params.quizId);
+    if (!quiz) return res.status(404).json({ message: 'Quiz not found' });
 
-    const quiz = await Quiz.findById(quizId);
-    if (!quiz) {
-      return res.status(404).json({ message: 'Quiz not found' });
-    }
+    const isOwner = quiz.createdBy.equals(req.userId);
+    const isAdmin = req.user.role === 'admin';
+    if (!isOwner && !isAdmin) return res.status(403).json({ message: 'Not authorized' });
 
-    // Check if the user is the owner or an admin
-    const isOwner = quiz.createdBy.equals(userId);
-    const isAdmin = userRole === 'admin';
-
-    if (!isOwner && !isAdmin) {
-      return res.status(403).json({ message: 'You are not authorized to view feedback for this quiz.' });
-    }
-
-    // Fetch feedback, populate user display name
-    const feedbackList = await Feedback.find({ quiz: quizId })
-                                     .populate('user', 'displayName') // Populate user's display name
-                                     .sort({ createdAt: -1 }); // Sort by newest first
+    const feedbackList = await Feedback.find({ quiz: quiz._id })
+      .populate('user','displayName')
+      .sort({ createdAt: -1 });
 
     res.json(feedbackList);
-
-  } catch (error) {
-    console.error('Error fetching feedback for quiz:', error);
-    res.status(500).json({ message: 'Failed to fetch feedback.' });
+  } catch (e) {
+    console.error('Feedback error:', e);
+    res.status(500).json({ message: 'Error fetching feedback' });
   }
-});
-
-// Read one quiz by CODE (hide answers for non-owner/admin)
-router.get('/code/:code', async (req, res) => {
-  // Find quiz by code, case-sensitive search
-  const q = await Quiz.findOne({ code: req.params.code }).populate('createdBy', 'displayName');
-  if (!q) return res.status(404).json({ message: 'Quiz not found with this code' });
-
-  // Check if the requester is the owner or an admin
-  const isOwner = q.createdBy && req.userId && q.createdBy._id.equals(req.userId);
-  const isAdmin = req.user && req.user.role === 'admin';
-
-  if (isOwner || isAdmin) {
-    // Owner or admin gets the full quiz details
-    return res.json(q);
-  }
-
-  // For other users, hide correctOption
-  const safe = q.toObject();
-  if (safe.questions && Array.isArray(safe.questions)) {
-      safe.questions.forEach(x => delete x.correctOption);
-  }
-  res.json(safe);
-});
-
-// Read one quiz (with answers for admin/owner, else hide)
-router.get('/:id', async (req, res) => {
-  // Populate createdBy field with displayName
-  const q = await Quiz.findById(req.params.id).populate('createdBy', 'displayName');
-  if (!q) return res.status(404).json({ message: 'Not found' });
-
-  // Access populated field directly
-  const isOwner = q.createdBy && q.createdBy._id.equals(req.userId);
-  const isAdmin = req.user && req.user.role === 'admin';
-
-  if (isOwner || isAdmin) {
-    // Owner or admin gets the full quiz details (including correct answers)
-    return res.json(q);
-  }
-
-  // For other users, hide correctOption
-  const safe = q.toObject(); // Use toObject() to work with a plain JS object
-  if (safe.questions && Array.isArray(safe.questions)) {
-      safe.questions.forEach(x => delete x.correctOption);
-  }
-  res.json(safe);
-});
-
-// Update quiz (only owner or admin)
-router.patch('/:id', async (req, res) => {
-  const q = await Quiz.findById(req.params.id);
-  if (!q) return res.status(404).json({ message: 'Not found' });
-  if (!q.createdBy.equals(req.userId) && req.user.role !== 'admin') {
-    return res.status(403).json({ message: 'Not allowed' });
-  }
-  // Explicitly update allowed fields, including timeLimit and category
-  const { title, description, questions, timeLimit, category } = req.body;
-  if (title) q.title = title;
-  if (description !== undefined) q.description = description;
-  if (questions) q.questions = questions;
-  // Allow setting timeLimit to 0 or null/undefined to remove it
-  if (timeLimit !== undefined) {
-      q.timeLimit = timeLimit ? parseInt(timeLimit, 10) : null;
-  }
-  if (category !== undefined) q.category = category;
-  
-  await q.save();
-  // Populate createdBy before sending response
-  await q.populate('createdBy', 'displayName');
-  res.json(q);
-});
-
-// Delete quiz (only owner or admin)
-router.delete('/:id', async (req, res) => {
-  const q = await Quiz.findById(req.params.id);
-  if (!q) return res.status(404).json({ message: 'Not found' });
-  if (!q.createdBy.equals(req.userId) && req.user.role!=='admin') {
-    return res.status(403).json({ message: 'Not allowed' });
-  }
-  await q.deleteOne();
-  res.status(204).end();
 });
 
 export default router;
