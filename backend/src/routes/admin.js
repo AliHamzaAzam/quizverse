@@ -8,11 +8,13 @@ import { authenticate, isAdmin } from '../middleware/auth.js';
 
 const router = express.Router();
 
+// Use authentication and authorization middleware for all routes
 router.use(authenticate, isAdmin, validateAdminOrigin);
 
 // Get all users
 router.get('/users', async (req, res) => {
     try {
+        // Include 'banned' field in the response for user information
         const users = await User.find({}, 'email role banned createdAt');
         res.json(users);
     } catch (error) {
@@ -73,7 +75,7 @@ router.delete('/users/:id', async (req, res) => {
 
         if (!user) return res.status(404).json({ message: 'User not found' });
         await user.deleteOne();
-        res.status(204).send();
+        res.status(204).send(); // No content on successful deletion
     } catch (error) {
         console.error('Error deleting user:', error);
         res.status(500).json({ message: 'Server error deleting user' });
@@ -81,7 +83,6 @@ router.delete('/users/:id', async (req, res) => {
 });
 
 // --- Quiz Management ---
-
 // Hide a quiz
 router.patch('/quizzes/:id/hide', async (req, res) => {
   try {
@@ -128,14 +129,13 @@ router.get('/stats', async (req, res) => {
 });
 
 // --- Report Management ---
-
 // GET /api/admin/reports - Fetch all reports
 router.get('/reports', async (req, res) => {
     try {
         const reports = await Report.find()
-            .populate('reportedBy', 'email displayName')
-            .populate('quiz', 'title createdBy')
-            .sort({ createdAt: -1 });
+            .populate('reportedBy', 'email displayName') // Populate reporter info
+            .populate('quiz', 'title createdBy') // Populate quiz info
+            .sort({ createdAt: -1 }); // Sort by newest first
         res.json(reports);
     } catch (error) {
         console.error('Error fetching reports:', error);
@@ -147,6 +147,8 @@ router.get('/reports', async (req, res) => {
 router.patch('/reports/:reportId', async (req, res) => {
     const { status } = req.body;
     const { reportId } = req.params;
+
+    // Validate status value
     const allowedStatuses = ['pending', 'resolved', 'dismissed'];
     if (!allowedStatuses.includes(status)) return res.status(400).json({ message: 'Invalid status value.' });
 
@@ -173,7 +175,7 @@ router.delete('/reports/:reportId', async (req, res) => {
     try {
         const report = await Report.findByIdAndDelete(reportId);
         if (!report) return res.status(404).json({ message: 'Report not found' });
-        res.status(204).send();
+        res.status(204).send(); // No content on successful deletion
     } catch (error) {
         console.error('Error deleting report:', error);
         res.status(500).json({ message: 'Server error deleting report' });

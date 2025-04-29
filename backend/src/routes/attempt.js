@@ -1,7 +1,7 @@
 import express from 'express';
 import Attempt from '../models/Attempt.js';
 import Quiz from '../models/Quiz.js';
-import { authenticate } from '../middleware/auth.js';
+import { authenticate } from '../middleware/auth.js'; // New middleware for authentication
 
 const router = express.Router();
 
@@ -25,14 +25,14 @@ router.post('/:quizId', async (req, res) => {
       user: req.userId,
       quiz: quiz._id,
       answers,
-      hintsUsed: [],           // initialize hints usage
+      hintsUsed: [],           // New field: initialize hints usage
       score
     });
 
     // Increment attempt count on the Quiz model
     await Quiz.findByIdAndUpdate(req.params.quizId, { $inc: { attemptCount: 1 } });
 
-    res.status(201).json({ score: at.score, attemptId: at._id, hintsUsed: at.hintsUsed });
+    res.status(201).json({ score: at.score, attemptId: at._id, hintsUsed: at.hintsUsed }); // Return score and hintsUsed
   } catch (error) {
     console.error('Error submitting attempt:', error);
     res.status(500).json({ message: 'Failed to submit answers' });
@@ -43,10 +43,10 @@ router.post('/:quizId', async (req, res) => {
 router.get('/my', async (req, res) => {
   try {
     const arr = await Attempt.find({ user: req.userId })
-      .populate('quiz', 'title description timeLimit')  // include timeLimit
+      .populate('quiz', 'title description timeLimit')  // Include timeLimit field
       .lean();
 
-    // return hintsUsed along with score and answers
+    // Return hintsUsed along with score and answers
     res.json(arr.map(a => ({
       attemptId: a._id,
       quiz: a.quiz,
@@ -70,7 +70,7 @@ router.get('/quiz/:quizId', async (req, res) => {
     res.json(list.map(a => ({
       user: a.user,
       score: a.score,
-      hintsUsed: a.hintsUsed,
+      hintsUsed: a.hintsUsed,  // Include hintsUsed
       createdAt: a.createdAt
     })));
   } catch (error) {
