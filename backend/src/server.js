@@ -16,6 +16,8 @@ import attemptRoutes from './routes/attempt.js';
 import leaderboardRoutes from './routes/leaderboard.js';
 import reportRoutes from './routes/report.js';
 import feedbackRoutes from './routes/feedback.js';
+import lobbyRoutes from './routes/lobby.js';
+
 
 import './config/passport.js';
 import { authenticate, isAdmin } from './middleware/auth.js';
@@ -46,7 +48,6 @@ app.use(cookieParser());
 app.use(express.json());
 
 // 4) session (after cookieParser & CORS)
-// Modify the isProd check in server.js
 const isProd = process.env.NODE_ENV === 'production' ||
     process.env.RAILWAY_STATIC_URL !== undefined ||
     (process.env.CLIENT_URL && process.env.CLIENT_URL.includes('vercel.app'));
@@ -89,6 +90,9 @@ app.use('/api/attempts', authenticate, attemptRoutes);
 app.use('/api/leaderboard', authenticate, leaderboardRoutes);
 app.use('/api/reports', authenticate, reportRoutes);
 app.use('/api/feedback', authenticate, feedbackRoutes);
+
+app.use('/api/lobby', lobbyRoutes);
+
 
 const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {

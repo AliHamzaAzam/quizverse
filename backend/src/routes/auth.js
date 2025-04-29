@@ -23,6 +23,7 @@ const signupSchema = z.object({
   accentColor: z.string().optional()
 });
 
+
 // Helper to generate JWTs
 function generateToken(user, expiresIn, isRefresh = false) {
   return jwt.sign(
@@ -32,8 +33,6 @@ function generateToken(user, expiresIn, isRefresh = false) {
   );
 }
 
-// Helper to set cookies with the correct SameSite / Secure flags
-function setAuthCookies(res, accessToken, refreshToken) {
   const isProd = process.env.NODE_ENV === 'production' ||
       process.env.RAILWAY_STATIC_URL !== undefined ||
       (process.env.CLIENT_URL && process.env.CLIENT_URL.includes('vercel.app'));

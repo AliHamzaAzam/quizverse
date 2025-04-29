@@ -12,6 +12,10 @@ const userSchema = new mongoose.Schema({
   lastName:   String,
   age:        Number,
   accentColor:String,
+
+  banned: { type: Boolean, default: false },
+  badges: [{ type: String, awardedAt: Date }],
+  
   bookmarkedQuizzes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Quiz' }]
 }, { timestamps: true });
 
