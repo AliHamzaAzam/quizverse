@@ -1,12 +1,9 @@
 import express from 'express';
 import Attempt from '../models/Attempt.js';
 import Quiz from '../models/Quiz.js';
-import { authenticate } from '../middleware/auth.js'; // New middleware for authentication
+// import { authenticate } from '../middleware/auth.js'; // No longer needed here
 
 const router = express.Router();
-
-// All routes require authentication
-router.use(authenticate);
 
 // POST submit answers
 router.post('/:quizId', async (req, res) => {

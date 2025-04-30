@@ -3,12 +3,12 @@ import Quiz from '../models/Quiz.js';
 import Attempt from '../models/Attempt.js';
 import Feedback from '../models/Feedback.js';
 import User from '../models/User.js';
-import { authenticate } from '../middleware/auth.js';
+// import { authenticate } from '../middleware/auth.js'; // No longer needed here
 
 const router = express.Router();
 
-// Protect all quiz routes
-router.use(authenticate);
+// Protect all quiz routes - REMOVED as it's handled globally in server.js
+// router.use(authenticate);
 
 // Helper: generate a 4-character alphanumeric code
 function generateCode(length = 4) {

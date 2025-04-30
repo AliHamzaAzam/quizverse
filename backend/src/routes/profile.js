@@ -6,6 +6,8 @@ import { storage } from '../utils/cloudinary.js';
 const router = express.Router();
 const upload = multer({ storage });
 
+// Authentication is handled globally in server.js for /api/profile
+
 // GET own profile
 router.get('/', async (req, res) => {
   const u = await User.findById(req.userId).select('-password -refreshToken');
