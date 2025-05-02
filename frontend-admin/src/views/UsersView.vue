@@ -12,18 +12,21 @@
             <th>Role</th>
             <th>Joined</th>
             <th>Actions</th>
+            <th>Status</th>
           </tr>
         </thead>
         <tbody>
           <tr v-for="user in users" :key="user._id">
             <td>{{ user.email }}</td>
             <td>{{ user.displayName || 'N/A' }}</td>
+            
             <td>
               <select v-model="user.role" @change="updateUserRole(user)" :disabled="isUpdatingRole === user._id">
                 <option value="user">User</option>
                 <option value="admin">Admin</option>
               </select>
             </td>
+            <td>{{ user.isBanned ? 'Banned' : 'Active' }}</td>
             <td>{{ formatDate(user.createdAt) }}</td>
             <td>
               <button @click="deleteUser(user._id)" class="btn-delete" :disabled="isDeleting === user._id">
@@ -31,6 +34,12 @@
               </button>
               <!-- Add other actions like view details if needed -->
             </td>
+            <td>
+              <button @click="toggleBan(user)" class="btn-ban" :disabled="isBanning === user._id">
+                {{ user.isBanned ? 'Unban' : 'Ban' }}
+              </button>
+            </td>
+
           </tr>
         </tbody>
       </table>
@@ -50,6 +59,25 @@ const isLoading = ref(true);
 const error = ref(null);
 const isUpdatingRole = ref(null); // Track which user's role is being updated
 const isDeleting = ref(null); // Track which user is being deleted
+const isBanning = ref(null);
+
+const toggleBan = async (user) => {
+  isBanning.value = user._id;
+  error.value = null;
+
+  const action = user.isBanned ? 'unban' : 'ban';
+
+  try {
+    await api.patch(`/api/admin/users/${user._id}/${action}`);
+    user.isBanned = !user.isBanned; // Optimistically update UI
+  } catch (err) {
+    console.error(`Failed to ${action} user:`, err);
+    error.value = err.response?.data?.message || `Failed to ${action} user.`;
+  } finally {
+    isBanning.value = null;
+  }
+};
+
 
 const fetchUsers = async () => {
   isLoading.value = true;
@@ -181,6 +209,20 @@ h1 {
 .btn-delete {
   background-color: #dc3545;
   color: white;
+}
+.btn-ban {
+  background-color: #6c757d;
+  color: white;
+  margin-left: 0.5rem;
+}
+
+.btn-ban:hover {
+  background-color: #5a6268;
+}
+
+.btn-ban:disabled {
+  background-color: #e9ecef;
+  cursor: not-allowed;
 }
 
 .btn-delete:hover {
