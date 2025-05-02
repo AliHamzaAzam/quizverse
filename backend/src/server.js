@@ -1,100 +1,198 @@
-// server.js
 import express from 'express';
-import cors from 'cors';
-import mongoose from 'mongoose';
-import dotenv from 'dotenv';
-import session from 'express-session';
-import passport from 'passport';
-import cookieParser from 'cookie-parser';
-import MongoStore from 'connect-mongo';
+import User from '../models/User.js';
+import Quiz from '../models/Quiz.js'; // Import Quiz Model
+import Attempt from '../models/Attempt.js'; // Import Attempt Model
+import Report from '../models/Report.js'; // Import Report Model
+import { validateAdminOrigin } from '../middleware/admin.js';
+import { authenticate, isAdmin } from '../middleware/auth.js';
 
-import authRoutes from './routes/auth.js';
-import adminRoutes from './routes/admin.js';
-import profileRoutes from './routes/profile.js'; 
-import quizRoutes from './routes/quiz.js';
-import attemptRoutes from './routes/attempt.js';
-import leaderboardRoutes from './routes/leaderboard.js';
-import reportRoutes from './routes/report.js';
-import feedbackRoutes from './routes/feedback.js';
-import lobbyRoutes from './routes/lobby.js';
+const router = express.Router();
 
+// Use authentication and authorization middleware for all routes
+router.use(authenticate, isAdmin, validateAdminOrigin);
 
-import './config/passport.js';
-import { authenticate, isAdmin } from './middleware/auth.js';
+// Get all users
+router.get('/users', async (req, res) => {
+    try {
+        // Include 'banned' field in the response for user information
+        const users = await User.find({}, 'email role banned createdAt');
+        res.json(users);
+    } catch (error) {
+        res.status(500).json({ message: 'Server error' });
+    }
+});
 
-dotenv.config();
+// Manage user roles
+router.patch('/users/:id/role', async (req, res) => {
+    try {
+        const user = await User.findByIdAndUpdate(
+            req.params.id,
+            { role: req.body.role },
+            { new: true }
+        );
+        if (!user) return res.status(404).json({ message: 'User not found' });
+        res.json(user);
+    } catch (error) {
+        res.status(500).json({ message: 'Server error' });
+    }
+});
 
-const app = express();
-app.set('trust proxy', 1);
-
-// 1) CORS must come before cookies/sessions
-app.use(cors({
-  origin: [
-    process.env.CLIENT_URL,
-    process.env.ADMIN_URL,
-    'http://localhost:5173',
-    'http://127.0.0.1:5173',
-    'https://quizverse-p6boulyed-ali-hamzas-projects-4c11c478.vercel.app',
-    'https://quizverse-seven.vercel.app',
-  ],
-  credentials: true,
-  exposedHeaders: ['Set-Cookie']
-}));
-
-// 2) parse cookies
-app.use(cookieParser());
-
-// 3) JSON body parser
-app.use(express.json());
-
-// 4) session (after cookieParser & CORS)
-const isProd = process.env.NODE_ENV === 'production' ||
-    process.env.RAILWAY_STATIC_URL !== undefined ||
-    (process.env.CLIENT_URL && process.env.CLIENT_URL.includes('vercel.app'));
-
-app.use(session({
-  secret: process.env.JWT_SECRET,
-  resave: false,
-  saveUninitialized: false,
-  store: MongoStore.create({
-    mongoUrl: process.env.MONGO_URI,
-    collectionName: 'sessions'
-  }),
-  cookie: {
-    httpOnly: true,
-    sameSite: isProd ? 'None' : 'Lax',    // ← Lax in dev, None in prod
-    secure: isProd,                       // ← false in dev, true in prod
-    maxAge: 1000 * 60 * 60 * 24           // 1 day
+// Ban a user
+router.patch('/users/:id/ban', async (req, res) => {
+  try {
+    const user = await User.findByIdAndUpdate(
+      req.params.id,
+      { banned: true },
+      { new: true }
+    );
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    res.json({ message: 'User banned', user });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error banning user' });
   }
-}));
-
-app.use(passport.initialize());
-app.use(passport.session());
-
-// 5) logger (after cookieParser & session so req.cookies is populated)
-app.use((req, res, next) => {
-  console.log(`[Root Logger] Received request: ${req.method} ${req.originalUrl} from Origin: ${req.headers.origin}`);
-  console.log(`[Root Logger] Cookies:`, req.cookies);
-  next();
 });
 
-// connect to MongoDB
-await mongoose.connect(process.env.MONGO_URI);
-
-// routes
-app.use('/api/auth', authRoutes);
-app.use('/api/admin', authenticate, isAdmin, adminRoutes);
-app.use('/api/profile', authenticate, profileRoutes);
-app.use('/api/quizzes', authenticate, quizRoutes);
-app.use('/api/attempts', authenticate, attemptRoutes);
-app.use('/api/leaderboard', authenticate, leaderboardRoutes);
-app.use('/api/reports', authenticate, reportRoutes);
-app.use('/api/feedback', authenticate, feedbackRoutes);
-
-app.use('/api/lobby', lobbyRoutes);
-
-
-const PORT = process.env.PORT || 5001;
-app.listen(PORT, () => {
-  console.log(`✅ Server running on port ${PORT}`);
+// Unban a user
+router.patch('/users/:id/unban', async (req, res) => {
+  try {
+    const user = await User.findByIdAndUpdate(
+      req.params.id,
+      { banned: false },
+      { new: true }
+    );
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    res.json({ message: 'User unbanned', user });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error unbanning user' });
+  }
 });
+
+// Delete user
+router.delete('/users/:id', async (req, res) => {
+    try {
+        const userId = req.params.id;
+        const user = await User.findById(userId);
+
+        if (!user) return res.status(404).json({ message: 'User not found' });
+        await user.deleteOne();
+        res.status(204).send(); // No content on successful deletion
+    } catch (error) {
+        console.error('Error deleting user:', error);
+        res.status(500).json({ message: 'Server error deleting user' });
+    }
+});
+
+// GET all quizzes including hidden ones (admin)
+router.get('/quizzes', async (req, res) => {
+  try {
+    const quizzes = await Quiz.find().populate('createdBy', 'displayName');
+    res.json(quizzes);
+  } catch (err) {
+    console.error('Admin fetch all quizzes error:', err);
+    res.status(500).json({ message: 'Failed to fetch all quizzes' });
+  }
+});
+
+
+
+// --- Quiz Management ---
+// Hide a quiz
+router.patch('/quizzes/:id/hide', async (req, res) => {
+  try {
+    const quiz = await Quiz.findByIdAndUpdate(
+      req.params.id,
+      { status: 'hidden' },
+      { new: true }
+    );
+    if (!quiz) return res.status(404).json({ message: 'Quiz not found' });
+    res.json({ message: 'Quiz hidden', quiz });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error hiding quiz' });
+  }
+});
+
+// Unhide a quiz
+router.patch('/quizzes/:id/unhide', async (req, res) => {
+  try {
+    const quiz = await Quiz.findByIdAndUpdate(
+      req.params.id,
+      { status: 'active' },
+      { new: true }
+    );
+    if (!quiz) return res.status(404).json({ message: 'Quiz not found' });
+    res.json({ message: 'Quiz unhidden', quiz });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error unhiding quiz' });
+  }
+});
+
+// --- Stats ---
+router.get('/stats', async (req, res) => {
+    try {
+        const userCount = await User.countDocuments();
+        const adminCount = await User.countDocuments({ role: 'admin' });
+        const quizCount = await Quiz.countDocuments();
+        const attemptCount = await Attempt.countDocuments();
+
+        res.json({ userCount, adminCount, quizCount, attemptCount });
+    } catch (error) {
+        console.error('Error fetching admin stats:', error);
+        res.status(500).json({ message: 'Server error fetching stats' });
+    }
+});
+
+// --- Report Management ---
+// GET /api/admin/reports - Fetch all reports
+router.get('/reports', async (req, res) => {
+    try {
+        const reports = await Report.find()
+            .populate('reportedBy', 'email displayName') // Populate reporter info
+            .populate('quiz', 'title createdBy') // Populate quiz info
+            .sort({ createdAt: -1 }); // Sort by newest first
+        res.json(reports);
+    } catch (error) {
+        console.error('Error fetching reports:', error);
+        res.status(500).json({ message: 'Server error fetching reports' });
+    }
+});
+
+// PATCH /api/admin/reports/:reportId - Update report status
+router.patch('/reports/:reportId', async (req, res) => {
+    const { status } = req.body;
+    const { reportId } = req.params;
+
+    // Validate status value
+    const allowedStatuses = ['pending', 'resolved', 'dismissed'];
+    if (!allowedStatuses.includes(status)) return res.status(400).json({ message: 'Invalid status value.' });
+
+    try {
+        const report = await Report.findByIdAndUpdate(
+            reportId,
+            { status: status, updatedAt: Date.now() },
+            { new: true }
+        )
+        .populate('reportedBy', 'email displayName')
+        .populate('quiz', 'title createdBy');
+
+        if (!report) return res.status(404).json({ message: 'Report not found' });
+        res.json(report);
+    } catch (error) {
+        console.error('Error updating report status:', error);
+        res.status(500).json({ message: 'Server error updating report status' });
+    }
+});
+
+// DELETE /api/admin/reports/:reportId - Delete a report
+router.delete('/reports/:reportId', async (req, res) => {
+    const { reportId } = req.params;
+    try {
+        const report = await Report.findByIdAndDelete(reportId);
+        if (!report) return res.status(404).json({ message: 'Report not found' });
+        res.status(204).send(); // No content on successful deletion
+    } catch (error) {
+        console.error('Error deleting report:', error);
+        res.status(500).json({ message: 'Server error deleting report' });
+    }
+});
+
+export default router;
