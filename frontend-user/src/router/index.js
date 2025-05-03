@@ -5,12 +5,15 @@ import Home from '@/views/Home.vue'
 // Import new views
 import Profile from '@/views/Profile.vue'
 import QuizList from '@/views/QuizList.vue'
-import QuizDetail from '@/views/QuizDetail.vue' // Added
-import QuizAttempt from '@/views/QuizAttempt.vue' // Added
-import MyAttempts from '@/views/MyAttempts.vue' // Added
-import QuizForm from '@/views/QuizForm.vue' // Added
-import MyQuizzes from '@/views/MyQuizzes.vue' // Import the new view
-import BookmarkedQuizzes from '@/views/BookmarkedQuizzes.vue'; // Import BookmarkedQuizzes view
+import QuizDetail from '@/views/QuizDetail.vue' 
+import QuizAttempt from '@/views/QuizAttempt.vue' 
+import MyAttempts from '@/views/MyAttempts.vue' 
+import QuizForm from '@/views/QuizForm.vue' 
+import MyQuizzes from '@/views/MyQuizzes.vue' 
+import BookmarkedQuizzes from '@/views/BookmarkedQuizzes.vue'; 
+import LobbyList from '@/views/LobbyList.vue';
+import LobbyView from '@/views/LobbyView.vue';
+import MyLobbies from '@/views/MyLobbies.vue'; // Import MyLobbies view
 
 const routes = [
     {
@@ -82,10 +85,30 @@ const routes = [
         meta: { requiresAuth: true }
     },
     {
+        path: '/my-lobbies', // Add route for My Lobbies
+        name: 'MyLobbies',
+        component: MyLobbies,
+        meta: { requiresAuth: true }
+    },
+    {
         path: '/bookmarked-quizzes', // Add route for Bookmarked Quizzes
         name: 'BookmarkedQuizzes',
         component: BookmarkedQuizzes,
         meta: { requiresAuth: true }
+    },
+    // Add Lobby Routes
+    {
+        path: '/lobbies',
+        name: 'LobbyList',
+        component: LobbyList,
+        meta: { requiresAuth: true }
+    },
+    {
+        path: '/lobbies/:id',
+        name: 'LobbyView',
+        component: LobbyView,
+        meta: { requiresAuth: true },
+        props: true
     },
 ]
 

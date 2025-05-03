@@ -12,8 +12,10 @@ const auth = useAuthStore()
         <router-link v-if="auth.user" to="/dashboard">Dashboard</router-link>
         <!-- Add new links for authenticated users -->
         <router-link v-if="auth.user" to="/quizzes">Quizzes</router-link>
+        <router-link v-if="auth.user" to="/lobbies">Lobbies</router-link> <!-- Add Lobbies link -->
         <router-link v-if="auth.user" to="/my-attempts">My Attempts</router-link>
         <router-link v-if="auth.user" to="/my-quizzes">My Quizzes</router-link> <!-- Add My Quizzes link -->
+        <router-link v-if="auth.user" to="/my-lobbies">My Lobbies</router-link> <!-- Add My Lobbies link -->
         <router-link v-if="auth.user" to="/bookmarked-quizzes">Bookmarked</router-link> <!-- Add Bookmarked Quizzes link -->
         <router-link v-if="auth.user" to="/profile">Profile</router-link>
       </div>

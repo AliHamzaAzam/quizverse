@@ -1,4 +1,3 @@
-// FILE: src/models/Lobby.js
 import mongoose from 'mongoose';
 
 const lobbySchema = new mongoose.Schema({
@@ -7,7 +6,12 @@ const lobbySchema = new mongoose.Schema({
   participants: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   participantLimit: { type: Number, required: true, min: 1 },
   status: { type: String, enum: ['waiting','started','ended'], default: 'waiting', index: true },
-  startTime: Date
+  startTime: Date,
+  winner: {
+    user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    attempt: { type: mongoose.Schema.Types.ObjectId, ref: 'Attempt' },
+    finishedAt: Date
+  }
 }, { timestamps: true });
 
 export default mongoose.model('Lobby', lobbySchema);

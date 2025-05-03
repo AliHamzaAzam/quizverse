@@ -11,11 +11,13 @@ const hintUsageSchema = new mongoose.Schema({
 });
 
 const attemptSchema = new mongoose.Schema({
-  user:   { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  quiz:   { type: mongoose.Schema.Types.ObjectId, ref: 'Quiz', required: true },
-  answers:[answerSchema],
+  user:      { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  quiz:      { type: mongoose.Schema.Types.ObjectId, ref: 'Quiz', required: true },
+  lobby:     { type: mongoose.Schema.Types.ObjectId, ref: 'Lobby' }, // Added: Link to lobby if applicable
+  answers:   [answerSchema],
   hintsUsed: [hintUsageSchema],
-  score:  { type: Number, required: true }
+  score:     { type: Number, required: true },
+  completedAt: { type: Date, default: Date.now } // Renamed from createdAt for clarity
 }, { timestamps: true });
 
 export default mongoose.model('Attempt', attemptSchema);
