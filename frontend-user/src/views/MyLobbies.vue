@@ -58,107 +58,174 @@ onMounted(fetchMyLobbies);
 </script>
 
 <style scoped>
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+
 .my-lobbies-container {
-  padding: 20px;
-  max-width: 800px;
-  margin: 20px auto;
-  background-color: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  max-width: 900px;
+  margin: 2.5rem auto;
+  padding: 2.5rem;
+  background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
+  border-radius: 24px;
+  box-shadow: 0 8px 32px rgba(124, 58, 237, 0.10);
+  font-family: 'Outfit', sans-serif;
 }
 
 h1 {
   text-align: center;
-  color: #333;
-  margin-bottom: 1.5rem;
+  margin-bottom: 2.5rem;
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: #4c1d95;
+  letter-spacing: 0.5px;
+  background: linear-gradient(45deg, #8b5cf6, #7c3aed);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 
 .loading-message,
 .no-lobbies-message {
   text-align: center;
-  color: #666;
-  margin-top: 2rem;
+  padding: 1.5rem;
+  font-size: 1.1rem;
+  margin-top: 1rem;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 12px;
+  border: 1px solid rgba(124, 58, 237, 0.1);
+  box-shadow: 0 4px 16px rgba(124, 58, 237, 0.08);
+  color: #5b21b6;
+  font-weight: 500;
 }
 
 .error-message {
-  color: #dc3545;
-  background-color: #f8d7da;
-  border: 1px solid #f5c6cb;
-  padding: 0.75rem;
-  border-radius: 4px;
-  margin-bottom: 1rem;
+  color: #a21caf;
+  background: rgba(236, 72, 153, 0.08);
+  border: 1px solid #f3e8ff;
+  padding: 1rem;
+  border-radius: 8px;
+  margin: 1rem 0;
+  font-weight: 500;
   text-align: center;
 }
 
 .lobby-list {
   list-style: none;
   padding: 0;
-  margin-top: 1rem;
+  margin: 1.5rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 
 .lobby-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem;
-  border-bottom: 1px solid #eee;
-  gap: 1rem;
+  padding: 1.5rem;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 16px;
+  border: 1px solid rgba(124, 58, 237, 0.1);
+  box-shadow: 0 4px 16px rgba(124, 58, 237, 0.08);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-.lobby-item:last-child {
-  border-bottom: none;
+.lobby-item:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(124, 58, 237, 0.12);
 }
 
 .lobby-info {
   display: flex;
   flex-direction: column;
-  gap: 0.3rem;
+  gap: 0.5rem;
 }
 
 .quiz-title {
-  font-weight: bold;
+  font-weight: 700;
+  font-size: 1.2rem;
+  color: #4c1d95;
 }
 
 .lobby-status,
 .lobby-id {
-  font-size: 0.9em;
-  color: #555;
+  font-size: 1rem;
+  color: #5b21b6;
+  font-weight: 500;
+}
+
+.lobby-status {
+  display: inline-block;
+  padding: 0.3rem 0.8rem;
+  background: rgba(124, 58, 237, 0.06);
+  border-radius: 6px;
+  margin-top: 0.3rem;
 }
 
 .btn {
-  padding: 0.5rem 1rem;
+  padding: 0.8rem 1.5rem;
   border: none;
-  border-radius: 4px;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  font-weight: 600;
   cursor: pointer;
-  font-size: 0.9rem;
-  text-decoration: none;
-  text-align: center;
-  white-space: nowrap;
+  transition: all 0.3s ease;
+  font-family: 'Outfit', sans-serif;
+  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.08);
 }
 
 .btn-view {
-  background-color: #007bff;
+  background: linear-gradient(45deg, #8b5cf6, #7c3aed);
   color: white;
-  transition: background-color 0.2s ease;
+  text-decoration: none;
 }
 
 .btn-view:hover {
-  background-color: #0056b3;
+  background: linear-gradient(45deg, #7c3aed, #8b5cf6);
+  box-shadow: 0 4px 16px rgba(124, 58, 237, 0.18);
+  transform: translateY(-2px);
 }
 
 .btn-delete {
-  background-color: #dc3545;
+  background: linear-gradient(45deg, #f472b6, #a21caf);
   color: white;
   margin-left: 0.5rem;
-  transition: background-color 0.2s ease;
 }
 
 .btn-delete:hover {
-  background-color: #b52a37;
+  background: linear-gradient(45deg, #a21caf, #f472b6);
+  box-shadow: 0 4px 16px rgba(236, 72, 153, 0.18);
+  transform: translateY(-2px);
 }
 
 .lobby-actions {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.8rem;
+}
+
+@media (max-width: 768px) {
+  .my-lobbies-container {
+    padding: 1.5rem;
+    margin: 1.5rem;
+  }
+
+  h1 {
+    font-size: 2rem;
+  }
+
+  .lobby-item {
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1.2rem;
+  }
+
+  .lobby-actions {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .btn {
+    width: 100%;
+    margin: 0.3rem 0;
+  }
 }
 </style>

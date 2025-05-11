@@ -163,16 +163,29 @@ onMounted(fetchMyQuizzes);
 </template>
 
 <style scoped>
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+
 .my-quizzes-container {
   max-width: 1000px;
-  margin: 2rem auto;
-  padding: 2rem;
+  margin: 2.5rem auto;
+  padding: 2.5rem;
+  background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
+  border-radius: 24px;
+  box-shadow: 0 8px 32px rgba(124, 58, 237, 0.10);
+  font-family: 'Outfit', sans-serif;
 }
 
 h1 {
   text-align: center;
-  margin-bottom: 2rem;
-  color: #333;
+  margin-bottom: 2.5rem;
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: #4c1d95;
+  letter-spacing: 0.5px;
+  background: linear-gradient(45deg, #8b5cf6, #7c3aed);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 
 .loading, .error-message, .no-quizzes {
@@ -180,49 +193,64 @@ h1 {
   padding: 1.5rem;
   font-size: 1.1rem;
   margin-top: 1rem;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 12px;
+  border: 1px solid rgba(124, 58, 237, 0.1);
+  box-shadow: 0 4px 16px rgba(124, 58, 237, 0.08);
 }
 
 .error-message {
-  color: #c62828;
-  background-color: #ffebee;
-  border: 1px solid #ffcdd2;
-  border-radius: 4px;
+  color: #a21caf;
+  background: rgba(236, 72, 153, 0.08);
+  border: 1px solid #f3e8ff;
 }
 
 .no-quizzes {
-  color: #555;
+  color: #5b21b6;
+  font-weight: 500;
 }
+
 .no-quizzes a {
-  color: #4361ee;
+  color: #7c3aed;
+  text-decoration: none;
+  margin-left: 0.5rem;
+  font-weight: 600;
+  transition: color 0.3s ease;
+}
+
+.no-quizzes a:hover {
+  color: #4c1d95;
   text-decoration: underline;
 }
 
 .quiz-management-list {
-    overflow-x: auto; /* Add horizontal scroll for smaller screens */
+  overflow-x: auto;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 16px;
+  border: 1px solid rgba(124, 58, 237, 0.1);
+  box-shadow: 0 4px 16px rgba(124, 58, 237, 0.08);
+  margin-top: 1.5rem;
 }
 
 table {
   width: 100%;
   border-collapse: collapse;
-  margin-top: 1.5rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  background-color: #fff;
-  border-radius: 8px;
-  overflow: hidden; /* Ensures border-radius applies to table */
+  font-size: 1.1rem;
 }
 
 th, td {
-  padding: 12px 15px;
+  padding: 1.2rem 1.5rem;
   text-align: left;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid rgba(124, 58, 237, 0.1);
 }
 
 th {
-  background-color: #f8f9fa;
-  font-weight: 600;
-  color: #333;
+  background: rgba(124, 58, 237, 0.06);
+  font-weight: 700;
+  color: #4c1d95;
   text-transform: uppercase;
-  font-size: 0.9rem;
+  font-size: 1rem;
+  letter-spacing: 0.5px;
 }
 
 tr:last-child td {
@@ -230,161 +258,203 @@ tr:last-child td {
 }
 
 tr:hover {
-    background-color: #f1f1f1;
+  background: rgba(124, 58, 237, 0.03);
 }
 
 td code {
-    background-color: #e9ecef;
-    padding: 0.2em 0.4em;
-    border-radius: 3px;
-    font-family: monospace;
+  background: rgba(124, 58, 237, 0.06);
+  padding: 0.3rem 0.6rem;
+  border-radius: 6px;
+  font-family: 'Outfit', monospace;
+  color: #7c3aed;
+  font-weight: 500;
 }
 
 .actions-cell {
-  white-space: nowrap; /* Prevent buttons from wrapping */
+  white-space: nowrap;
   text-align: right;
 }
 
 .actions-cell button {
-  padding: 6px 12px;
-  margin-left: 8px;
+  padding: 0.6rem 1.2rem;
+  margin-left: 0.8rem;
   border: none;
-  border-radius: 4px;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
   cursor: pointer;
-  font-size: 0.9rem;
-  transition: background-color 0.2s;
-}
-
-.btn-edit {
-  background-color: #ffb703;
-  color: #333;
-}
-.btn-edit:hover {
-  background-color: #fca311;
-}
-
-.btn-delete {
-  background-color: #e63946;
-  color: white;
-}
-.btn-delete:hover {
-  background-color: #d62828;
+  transition: all 0.3s ease;
+  font-family: 'Outfit', sans-serif;
 }
 
 .btn-feedback {
-  background-color: #0dcaf0; /* Info color */
-  color: #000;
-  padding: 6px 10px; /* Slightly smaller padding */
-}
-.btn-feedback:hover {
-  background-color: #31d2f2;
-}
-.btn-feedback:disabled {
-    opacity: 0.7;
-    cursor: not-allowed;
+  background: #ede9fe;
+  color: #7c3aed;
 }
 
+.btn-feedback:hover:not(:disabled) {
+  background: #c4b5fd;
+  color: #4c1d95;
+  transform: translateY(-2px);
+}
 
-/* Feedback Row and Details Styles */
-.feedback-row td {
-    padding: 0; /* Remove padding from the td */
-    border-bottom: 1px solid #ccc; /* Add a separator */
-    border-top: 1px solid #ccc; /* Add a separator */
+.btn-edit {
+  background: linear-gradient(45deg, #8b5cf6, #7c3aed);
+  color: white;
+}
+
+.btn-edit:hover {
+  background: linear-gradient(45deg, #7c3aed, #8b5cf6);
+  box-shadow: 0 4px 16px rgba(124, 58, 237, 0.18);
+  transform: translateY(-2px);
+}
+
+.btn-delete {
+  background: linear-gradient(45deg, #f472b6, #a21caf);
+  color: white;
+}
+
+.btn-delete:hover {
+  background: linear-gradient(45deg, #a21caf, #f472b6);
+  box-shadow: 0 4px 16px rgba(236, 72, 153, 0.18);
+  transform: translateY(-2px);
+}
+
+.feedback-row {
+  background: rgba(255, 255, 255, 0.98);
 }
 
 .feedback-details {
-    background-color: #f0f8ff; /* Light blue background */
     padding: 1.5rem;
-    position: relative; /* For positioning the close button */
+  position: relative;
 }
 
 .feedback-details h4 {
-    margin-top: 0;
-    margin-bottom: 1rem;
-    color: #333;
+  color: #4c1d95;
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
 }
 
 .btn-close-feedback {
     position: absolute;
-    top: 10px;
-    right: 15px;
+  top: 1rem;
+  right: 1rem;
     background: none;
     border: none;
-    font-size: 1.8rem;
+  font-size: 1.5rem;
+  color: #7c3aed;
+  cursor: pointer;
+  padding: 0.5rem;
     line-height: 1;
-    cursor: pointer;
-    color: #888;
-}
-.btn-close-feedback:hover {
-    color: #333;
+  transition: color 0.3s ease;
 }
 
+.btn-close-feedback:hover {
+  color: #4c1d95;
+}
 
 .loading-feedback {
     text-align: center;
+  color: #5b21b6;
     padding: 1rem;
-    color: #555;
 }
 
 .feedback-list {
     list-style: none;
     padding: 0;
     margin: 0;
-    max-height: 300px; /* Limit height and make scrollable */
-    overflow-y: auto;
 }
 
 .feedback-item {
-    background-color: #fff;
-    border: 1px solid #e0e0e0;
-    border-radius: 4px;
-    padding: 1rem;
-    margin-bottom: 1rem;
+  padding: 1.2rem;
+  border-bottom: 1px solid rgba(124, 58, 237, 0.1);
+  transition: background-color 0.3s ease;
 }
+
 .feedback-item:last-child {
-    margin-bottom: 0;
+  border-bottom: none;
+}
+
+.feedback-item:hover {
+  background: rgba(124, 58, 237, 0.03);
 }
 
 .feedback-header {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    margin-bottom: 0.5rem;
-    font-size: 0.9rem;
-    color: #555;
-    flex-wrap: wrap; /* Allow wrapping on small screens */
-    gap: 10px;
+  gap: 1rem;
+  margin-bottom: 0.8rem;
 }
 
 .feedback-user {
-    font-weight: bold;
-    color: #333;
+  font-weight: 600;
+  color: #4c1d95;
 }
 
 .feedback-rating {
-    color: #ffc107; /* Star color */
-    font-size: 1.1rem;
+  color: #7c3aed;
+  font-size: 1.2rem;
+}
+
+.feedback-date {
+  color: #5b21b6;
+  font-size: 0.9rem;
+  margin-left: auto;
 }
 
 .feedback-comment {
-    margin-top: 0.5rem;
-    margin-bottom: 0;
-    font-size: 1rem;
+  color: #5b21b6;
     line-height: 1.5;
-    color: #212529;
+  margin: 0;
 }
+
 .feedback-comment-none {
-    margin-top: 0.5rem;
-    margin-bottom: 0;
-    font-size: 1rem;
-    color: #6c757d;
+  color: #8b5cf6;
+  font-style: italic;
+  margin: 0;
 }
 
 .no-feedback {
     text-align: center;
-    padding: 1rem;
-    color: #777;
-    font-style: italic;
+  color: #5b21b6;
+  padding: 2rem;
+  font-weight: 500;
 }
 
+@media (max-width: 768px) {
+  .my-quizzes-container {
+    padding: 1.5rem;
+    margin: 1.5rem;
+  }
+
+  h1 {
+    font-size: 2rem;
+  }
+
+  th, td {
+    padding: 1rem;
+  }
+
+  .actions-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .actions-cell button {
+    width: 100%;
+    margin: 0;
+  }
+
+  .feedback-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+}
+
+  .feedback-date {
+    margin-left: 0;
+  }
+}
 </style>

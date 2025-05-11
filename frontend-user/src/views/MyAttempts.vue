@@ -54,16 +54,29 @@ const formatDate = (dateString) => {
 </template>
 
 <style scoped>
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+
 .my-attempts-container {
-  max-width: 800px;
-  margin: 2rem auto;
-  padding: 2rem;
+  max-width: 900px;
+  margin: 2.5rem auto;
+  padding: 2.5rem;
+  background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
+  border-radius: 24px;
+  box-shadow: 0 8px 32px rgba(124, 58, 237, 0.10);
+  font-family: 'Outfit', sans-serif;
 }
 
 h1 {
   text-align: center;
-  margin-bottom: 2rem;
-  color: #333;
+  margin-bottom: 2.5rem;
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: #4c1d95;
+  letter-spacing: 0.5px;
+  background: linear-gradient(45deg, #8b5cf6, #7c3aed);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 
 .loading, .error-message, .no-attempts {
@@ -71,22 +84,34 @@ h1 {
   padding: 1.5rem;
   font-size: 1.1rem;
   margin-top: 1rem;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 12px;
+  border: 1px solid rgba(124, 58, 237, 0.1);
+  box-shadow: 0 4px 16px rgba(124, 58, 237, 0.08);
 }
 
 .error-message {
-  color: #c62828;
-  background-color: #ffebee;
-  border: 1px solid #ffcdd2;
-  border-radius: 4px;
+  color: #a21caf;
+  background: rgba(236, 72, 153, 0.08);
+  border: 1px solid #f3e8ff;
 }
 
 .no-attempts {
-    color: #555;
+  color: #5b21b6;
+  font-weight: 500;
 }
+
 .no-attempts a {
-    color: #4361ee;
+  color: #7c3aed;
+  text-decoration: none;
+  margin-left: 0.5rem;
+  font-weight: 600;
+  transition: color 0.3s ease;
+}
+
+.no-attempts a:hover {
+  color: #4c1d95;
     text-decoration: underline;
-    margin-left: 0.5rem;
 }
 
 .attempts-list {
@@ -96,51 +121,90 @@ h1 {
 }
 
 .attempt-card {
-  background-color: #fff;
-  padding: 1.5rem;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  background: rgba(255, 255, 255, 0.95);
+  padding: 1.8rem;
+  border-radius: 16px;
+  box-shadow: 0 4px 16px rgba(124, 58, 237, 0.08);
   display: flex;
   flex-direction: column;
+  border: 1px solid rgba(124, 58, 237, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.attempt-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 24px rgba(124, 58, 237, 0.12);
 }
 
 .attempt-card h2 {
   margin-top: 0;
-  margin-bottom: 0.75rem;
-  font-size: 1.2rem;
-  color: #333;
+  margin-bottom: 1rem;
+  font-size: 1.4rem;
+  color: #4c1d95;
+  font-weight: 700;
 }
 
 .score {
-  font-size: 1.1rem;
-  font-weight: bold;
-  color: #4361ee;
-  margin-bottom: 0.5rem;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #7c3aed;
+  margin-bottom: 0.8rem;
+  background: rgba(124, 58, 237, 0.06);
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  display: inline-block;
 }
 
 .date {
-  font-size: 0.9rem;
-  color: #777;
-  margin-bottom: 1rem;
+  font-size: 1rem;
+  color: #5b21b6;
+  margin-bottom: 1.5rem;
+  font-weight: 500;
 }
 
 .btn-details {
-  margin-top: auto; /* Push button to bottom */
-  padding: 0.6rem 1.2rem;
-  border-radius: 4px;
+  margin-top: auto;
+  padding: 0.8rem 1.5rem;
+  border-radius: 8px;
   text-decoration: none;
   text-align: center;
-  font-size: 0.9rem;
-  font-weight: 500;
+  font-size: 1.1rem;
+  font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.2s, color 0.2s;
-  background-color: #e9ecef;
-  color: #333;
-  border: 1px solid #ced4da;
-  align-self: flex-start; /* Align button left */
+  transition: all 0.3s ease;
+  background: linear-gradient(45deg, #8b5cf6, #7c3aed);
+  color: white;
+  border: none;
+  align-self: flex-start;
+  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.08);
 }
 
 .btn-details:hover {
-  background-color: #dee2e6;
+  background: linear-gradient(45deg, #7c3aed, #8b5cf6);
+  box-shadow: 0 4px 16px rgba(124, 58, 237, 0.18);
+  transform: translateY(-2px);
+}
+
+@media (max-width: 768px) {
+  .my-attempts-container {
+    padding: 1.5rem;
+    margin: 1.5rem;
+  }
+
+  h1 {
+    font-size: 2rem;
+  }
+
+  .attempts-list {
+    grid-template-columns: 1fr;
+  }
+
+  .attempt-card {
+    padding: 1.5rem;
+  }
+
+  .btn-details {
+    width: 100%;
+  }
 }
 </style>
