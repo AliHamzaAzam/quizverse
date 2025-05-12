@@ -174,153 +174,180 @@ onMounted(() => {
 </script>
 
 <style scoped>
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+
 .lobby-list-container {
-  padding: 20px;
-  max-width: 600px;
-  margin: 20px auto;
-  background-color: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  padding: 2.5rem;
+  max-width: 800px;
+  margin: 2.5rem auto;
+  background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
+  border-radius: 24px;
+  box-shadow: 0 8px 32px rgba(124, 58, 237, 0.10);
+  font-family: 'Outfit', sans-serif;
 }
 
-h1, h2 {
+h1 {
   text-align: center;
-  color: #333;
+  margin-bottom: 2.5rem;
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: #4c1d95;
+  letter-spacing: 0.5px;
+  background: linear-gradient(45deg, #8b5cf6, #7c3aed);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+h2 {
+  text-align: center;
+  color: #7c3aed;
   margin-bottom: 1.5rem;
+  font-size: 1.8rem;
+  font-weight: 700;
 }
 
 .lobby-action-section {
-  margin-bottom: 2rem;
-  padding: 1.5rem;
-  border: 1px solid #eee;
-  border-radius: 6px;
-  background-color: #fdfdfd;
+  margin-bottom: 2.5rem;
+  padding: 2rem;
+  border: 1px solid rgba(124, 58, 237, 0.1);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 4px 16px rgba(124, 58, 237, 0.08);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-.lobby-action-section h2 {
-  margin-top: 0;
-  margin-bottom: 1rem;
-  font-size: 1.4em;
-  color: #444;
-  text-align: left;
-  border-bottom: 1px solid #eee;
-  padding-bottom: 0.5rem;
+.lobby-action-section:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 24px rgba(124, 58, 237, 0.12);
 }
 
 .form-group {
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
 }
 
 label {
   display: block;
   margin-bottom: 0.5rem;
-  font-weight: bold;
-  color: #555;
+  color: #5b21b6;
+  font-weight: 500;
+  font-size: 1.1rem;
 }
 
-input[type="text"],
-input[type="number"],
-select {
+input, select {
   width: 100%;
-  padding: 0.75rem;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  box-sizing: border-box; /* Include padding and border in element's total width/height */
+  padding: 0.8rem 1rem;
+  border: 1px solid rgba(124, 58, 237, 0.2);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.9);
+  color: #4c1d95;
   font-size: 1rem;
+  font-family: 'Outfit', sans-serif;
+  transition: all 0.3s ease;
 }
 
-select {
-   cursor: pointer;
+input:focus, select:focus {
+  outline: none;
+  border-color: #7c3aed;
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
 }
 
-select:disabled {
-    background-color: #eee;
-    cursor: not-allowed;
+input::placeholder {
+  color: #a78bfa;
+}
+
+.error-message {
+  color: #a21caf;
+  background: rgba(236, 72, 153, 0.08);
+  border: 1px solid #f3e8ff;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  font-weight: 500;
+}
+
+.info-message {
+  color: #5b21b6;
+  background: rgba(124, 58, 237, 0.06);
+  padding: 1rem;
+  border-radius: 8px;
+  margin-top: 0.5rem;
+  font-size: 0.95rem;
+}
+
+.info-message a {
+  color: #7c3aed;
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.3s ease;
+}
+
+.info-message a:hover {
+  color: #4c1d95;
+  text-decoration: underline;
 }
 
 .btn {
-  padding: 0.75rem 1.5rem;
+  width: 100%;
+  padding: 0.8rem 1.5rem;
   border: none;
-  border-radius: 4px;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  font-weight: 600;
   cursor: pointer;
-  font-size: 1rem;
-  font-weight: bold;
-  transition: background-color 0.2s ease;
-  display: inline-block; /* Ensure buttons align well */
-  width: 100%; /* Make buttons take full width of their container */
-  margin-top: 0.5rem; /* Add some space above the button */
+  transition: all 0.3s ease;
+  font-family: 'Outfit', sans-serif;
+  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.08);
+}
+
+.btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
 }
 
 .btn-primary {
-  background-color: #4CAF50; /* Green */
+  background: linear-gradient(45deg, #8b5cf6, #7c3aed);
   color: white;
 }
 
 .btn-primary:hover:not(:disabled) {
-  background-color: #45a049;
+  background: linear-gradient(45deg, #7c3aed, #8b5cf6);
+  box-shadow: 0 4px 16px rgba(124, 58, 237, 0.18);
+  transform: translateY(-2px);
 }
 
 .btn-secondary {
-  background-color: #007bff; /* Blue */
-  color: white;
+  background: #ede9fe;
+  color: #7c3aed;
 }
 
 .btn-secondary:hover:not(:disabled) {
-  background-color: #0056b3;
+  background: #c4b5fd;
+  color: #4c1d95;
+  transform: translateY(-2px);
 }
 
+@media (max-width: 768px) {
+  .lobby-list-container {
+    padding: 1.5rem;
+    margin: 1.5rem;
+  }
 
-.btn:disabled {
-  background-color: #ccc;
-  cursor: not-allowed;
-  opacity: 0.7;
-}
-
-.error-message {
-  color: #dc3545; /* Red */
-  background-color: #f8d7da;
-  border: 1px solid #f5c6cb;
-  padding: 0.75rem;
-  border-radius: 4px;
-  margin-bottom: 1rem;
-  text-align: center;
+  h1 {
+    font-size: 2rem;
 }
 
-.info-message {
-    font-size: 0.9em;
-    color: #666;
-    margin-top: 0.5rem;
+  h2 {
+    font-size: 1.5rem;
 }
 
-/* Styles for future lobby list */
-.active-lobbies-section {
-    margin-top: 2rem;
-}
-.active-lobbies-section ul {
-    list-style: none;
-    padding: 0;
-}
-.active-lobbies-section li {
-    padding: 0.8rem;
-    border-bottom: 1px solid #eee;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-.active-lobbies-section li:last-child {
-    border-bottom: none;
-}
-.active-lobbies-section button {
-    padding: 0.3rem 0.6rem;
-    font-size: 0.9em;
-    background-color: #6c757d; /* Grey */
-    color: white;
-    border: none;
-    border-radius: 3px;
-    cursor: pointer;
-}
-.active-lobbies-section button:hover {
-    background-color: #5a6268;
+  .lobby-action-section {
+    padding: 1.5rem;
 }
 
+  .btn {
+    padding: 0.7rem 1.2rem;
+    font-size: 1rem;
+  }
+}
 </style>

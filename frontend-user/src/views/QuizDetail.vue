@@ -209,100 +209,181 @@ const formatDate = (dateString) => {
 </template>
 
 <style scoped>
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+
 .quiz-detail-container {
-  max-width: 800px;
-  margin: 2rem auto;
-  padding: 2rem;
-  background-color: #fff;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  max-width: 900px;
+  margin: 2.5rem auto;
+  padding: 2.5rem;
+  background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
+  border-radius: 24px;
+  box-shadow: 0 8px 32px rgba(124, 58, 237, 0.10);
+  font-family: 'Outfit', sans-serif;
 }
 
 h1 {
   text-align: center;
-  margin-bottom: 1rem;
-  color: #333;
+  margin-bottom: 2.5rem;
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: #4c1d95;
+  letter-spacing: 0.5px;
+  background: linear-gradient(45deg, #8b5cf6, #7c3aed);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+h2 {
+  color: #4c1d95;
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.quiz-content {
+  background: rgba(255, 255, 255, 0.95);
+  padding: 2rem;
+  border-radius: 16px;
+  border: 1px solid rgba(124, 58, 237, 0.1);
+  box-shadow: 0 4px 16px rgba(124, 58, 237, 0.08);
 }
 
 .description {
-  color: #555;
-  margin-bottom: 1rem;
-  text-align: center;
-  font-size: 1.1rem;
+  font-size: 1.2rem;
+  color: #5b21b6;
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
 }
 
 .created-by {
-  text-align: center;
-  font-size: 0.9rem;
-  color: #777;
+  color: #6b21a8;
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+}
+
+.quiz-code-display {
+  background: rgba(124, 58, 237, 0.1);
+  padding: 1rem;
+  border-radius: 12px;
   margin-bottom: 2rem;
+  font-size: 1.1rem;
+  color: #4c1d95;
+}
+
+.quiz-code-display code {
+  font-family: 'Outfit', monospace;
+  font-weight: 600;
+  background: rgba(124, 58, 237, 0.1);
+  padding: 0.3rem 0.6rem;
+  border-radius: 6px;
 }
 
 .actions {
   display: flex;
-  justify-content: center;
+  flex-wrap: wrap;
   gap: 1rem;
   margin-bottom: 2.5rem;
-  flex-wrap: wrap;
 }
 
 .btn {
-  padding: 0.7rem 1.5rem;
-  border-radius: 4px;
+  padding: 1rem 2rem;
+  border-radius: 12px;
+  font-size: 1.1rem;
+  font-weight: 600;
   text-decoration: none;
-  text-align: center;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: background-color 0.2s, color 0.2s, box-shadow 0.2s;
+  transition: all 0.3s ease;
+  font-family: 'Outfit', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
   border: none;
+  cursor: pointer;
 }
 
 .btn-primary {
-  background-color: #4361ee;
+  background: linear-gradient(45deg, #8b5cf6, #7c3aed);
   color: white;
 }
+
 .btn-primary:hover {
-  background-color: #3a56d4;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  background: linear-gradient(45deg, #7c3aed, #8b5cf6);
+  box-shadow: 0 4px 16px rgba(124, 58, 237, 0.18);
+  transform: translateY(-2px);
 }
 
 .btn-secondary {
-  background-color: #ffb703;
-  color: #333;
+  background: #ede9fe;
+  color: #7c3aed;
 }
+
 .btn-secondary:hover {
-  background-color: #fca311;
+  background: #c4b5fd;
+  color: #4c1d95;
+  transform: translateY(-2px);
+}
+
+.btn-danger {
+  background: rgba(236, 72, 153, 0.1);
+  color: #a21caf;
+}
+
+.btn-danger:hover {
+  background: rgba(236, 72, 153, 0.2);
+  transform: translateY(-2px);
 }
 
 .btn-link {
     background: none;
-    border: none;
-    color: #4361ee;
+  color: #7c3aed;
     text-decoration: underline;
-    padding: 0.5rem;
-}
-.btn-link:hover {
-    color: #3a56d4;
+  padding: 0;
 }
 
-.btn-danger {
-  background-color: #e63946;
-  color: white;
+.btn-link:hover {
+  color: #4c1d95;
 }
-.btn-danger:hover {
-  background-color: #d62828;
+
+.bookmark-action {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 2rem;
+}
+
+.btn-bookmark {
+  padding: 1rem 2rem;
+  background: #ede9fe;
+  color: #7c3aed;
+  border: none;
+  border-radius: 12px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: 'Outfit', sans-serif;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-bookmark:hover {
+  background: #c4b5fd;
+  color: #4c1d95;
+  transform: translateY(-2px);
+}
+
+.btn-bookmark.bookmarked {
+  background: rgba(124, 58, 237, 0.1);
+  color: #4c1d95;
 }
 
 .leaderboard-section {
-  margin-top: 2rem;
-  border-top: 1px solid #eee;
-  padding-top: 2rem;
-}
-
-.leaderboard-section h2 {
-  text-align: center;
-  margin-bottom: 1.5rem;
-  color: #444;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 2rem;
+  border-radius: 16px;
+  border: 1px solid rgba(124, 58, 237, 0.1);
+  box-shadow: 0 4px 16px rgba(124, 58, 237, 0.08);
+  margin-top: 2.5rem;
 }
 
 .leaderboard-table {
@@ -311,29 +392,31 @@ h1 {
   margin-top: 1rem;
 }
 
-.leaderboard-table th, .leaderboard-table td {
-  padding: 0.8rem 1rem;
+.leaderboard-table th,
+.leaderboard-table td {
+  padding: 1rem;
   text-align: left;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid rgba(124, 58, 237, 0.1);
 }
 
 .leaderboard-table th {
-  background-color: #f8f9fa;
+  background: rgba(124, 58, 237, 0.05);
+  color: #4c1d95;
   font-weight: 600;
-  color: #555;
+  font-size: 1.1rem;
 }
 
-.leaderboard-table tbody tr:hover {
-  background-color: #f1f3f5;
+.leaderboard-table tr:hover {
+  background: rgba(124, 58, 237, 0.02);
 }
 
 .no-leaderboard {
   text-align: center;
-  color: #777;
-  margin-top: 1rem;
-  padding: 1rem;
-  background-color: #f8f9fa;
-  border-radius: 4px;
+  padding: 2rem;
+  color: #6b21a8;
+  font-size: 1.1rem;
+  background: rgba(124, 58, 237, 0.05);
+  border-radius: 12px;
 }
 
 .loading, .error-message {
@@ -341,31 +424,16 @@ h1 {
   padding: 1.5rem;
   font-size: 1.1rem;
   margin-top: 1rem;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 12px;
+  border: 1px solid rgba(124, 58, 237, 0.1);
+  box-shadow: 0 4px 16px rgba(124, 58, 237, 0.08);
 }
 
 .error-message {
-  color: #c62828;
-  background-color: #ffebee;
-  border: 1px solid #ffcdd2;
-  border-radius: 4px;
-  padding: 1rem; /* Ensure padding */
-  margin-bottom: 1rem; /* Add margin */
-  text-align: center;
-}
-
-.quiz-code-display {
-    text-align: center;
-    margin-bottom: 1rem;
-    font-size: 1rem;
-    color: #555;
-}
-
-.quiz-code-display code {
-    background-color: #e9ecef;
-    padding: 0.2em 0.5em;
-    border-radius: 4px;
-    font-family: monospace;
-    color: #007bff;
+  color: #a21caf;
+  background: rgba(236, 72, 153, 0.08);
+  border: 1px solid #f3e8ff;
 }
 
 /* Modal Styles */
@@ -375,7 +443,7 @@ h1 {
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.6);
+  background: rgba(0, 0, 0, 0.5);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -383,106 +451,104 @@ h1 {
 }
 
 .modal-content {
-  background-color: #fff;
+  background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
   padding: 2rem;
-  border-radius: 8px;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+  border-radius: 16px;
   width: 90%;
-  max-width: 500px;
+  max-width: 600px;
+  box-shadow: 0 8px 32px rgba(124, 58, 237, 0.2);
 }
 
 .modal-content h2 {
-  margin-top: 0;
   margin-bottom: 1.5rem;
-  text-align: center;
+  color: #4c1d95;
 }
 
 .form-group {
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
 }
 
 .form-group label {
   display: block;
   margin-bottom: 0.5rem;
-  font-weight: 500;
+  color: #4c1d95;
+  font-weight: 600;
 }
 
 .form-group textarea {
   width: 100%;
-  padding: 0.75rem;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+  padding: 1rem;
+  border: 2px solid rgba(124, 58, 237, 0.2);
+  border-radius: 12px;
   font-size: 1rem;
-  box-sizing: border-box;
-  resize: vertical;
+  font-family: 'Outfit', sans-serif;
+  color: #4c1d95;
+  background: rgba(255, 255, 255, 0.9);
+  transition: all 0.3s ease;
+}
+
+.form-group textarea:focus {
+  outline: none;
+  border-color: #7c3aed;
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
 }
 
 .modal-actions {
-  margin-top: 1.5rem;
   display: flex;
   justify-content: flex-end;
-  gap: 0.75rem;
-}
-
-.modal-error,
-.modal-success {
-    margin-top: 1rem;
-    padding: 0.75rem;
-    border-radius: 4px;
-    text-align: center;
+  gap: 1rem;
+  margin-top: 1.5rem;
 }
 
 .modal-error {
-    background-color: #ffebee;
-    color: #c62828;
-    border: 1px solid #ffcdd2;
+  color: #a21caf;
+  background: rgba(236, 72, 153, 0.08);
+  border: 1px solid #f3e8ff;
+  padding: 1rem;
+  border-radius: 12px;
+  margin-bottom: 1rem;
 }
 
 .modal-success {
-    background-color: #e8f5e9;
-    color: #2e7d32;
-    border: 1px solid #c8e6c9;
+  color: #4c1d95;
+  background: rgba(124, 58, 237, 0.08);
+  border: 1px solid #ede9fe;
+  padding: 1rem;
+  border-radius: 12px;
+  margin-bottom: 1rem;
 }
 
-.bookmark-action {
+@media (max-width: 768px) {
+  .quiz-detail-container {
+    margin: 1.5rem;
+    padding: 1.5rem;
+  }
+
+  h1 {
+    font-size: 2rem;
+  }
+
+  h2 {
+    font-size: 1.5rem;
+  }
+
+  .actions {
+    flex-direction: column;
+  }
+
+  .btn {
+    width: 100%;
     text-align: center;
-    margin-bottom: 1.5rem; /* Space below bookmark button */
+  }
+
+  .leaderboard-table {
+    display: block;
+    overflow-x: auto;
 }
 
-.btn-bookmark {
-    padding: 0.7rem 1.5rem;
-    border-radius: 20px; /* Pill shape */
-    text-decoration: none;
-    text-align: center;
-    font-size: 0.95rem;
-    cursor: pointer;
-    transition: background-color 0.2s, color 0.2s, border-color 0.2s, box-shadow 0.2s;
-    border: 1px solid #6c757d;
-    background-color: #fff;
-    color: #6c757d;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
+  .modal-content {
+    width: 95%;
+    margin: 1rem;
+  }
 }
-
-.btn-bookmark:hover {
-    background-color: #f8f9fa;
-    border-color: #5a6268;
-    color: #5a6268;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-}
-
-.btn-bookmark.bookmarked {
-    background-color: #ffc107;
-    border-color: #ffc107;
-    color: #333;
-}
-
-.btn-bookmark.bookmarked:hover {
-    background-color: #e0a800;
-    border-color: #e0a800;
-}
-
-/* Add Font Awesome if not already included globally */
-/* @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css'); */
 </style>

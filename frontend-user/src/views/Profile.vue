@@ -153,42 +153,104 @@ const handleProfileUpdate = async () => {
 </template>
 
 <style scoped>
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+
 .profile-container {
   max-width: 600px;
-  margin: 2rem auto;
-  padding: 2rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  background-color: #fff;
+  margin: 2.5rem auto;
+  padding: 2.5rem;
+  background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
+  border-radius: 24px;
+  box-shadow: 0 8px 32px rgba(124, 58, 237, 0.10);
+  font-family: 'Outfit', sans-serif;
 }
 
 h1 {
     text-align: center;
+  margin-bottom: 2.5rem;
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: #4c1d95;
+  letter-spacing: 0.5px;
+  background: linear-gradient(45deg, #8b5cf6, #7c3aed);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+h2 {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #4c1d95;
     margin-bottom: 1.5rem;
-    color: #333;
 }
 
 .profile-details p {
-  margin-bottom: 0.5rem;
-  color: #555;
+  margin-bottom: 1rem;
+  color: #5b21b6;
+  font-size: 1.1rem;
+  line-height: 1.6;
+}
+
+.profile-details strong {
+  color: #4c1d95;
+  font-weight: 600;
 }
 
 .profile-form {
   margin-top: 2rem;
   display: flex;
   flex-direction: column;
-  gap: 1.2rem; /* Increased gap */
+  gap: 1.5rem;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 2rem;
+  border-radius: 16px;
+  border: 1px solid rgba(124, 58, 237, 0.1);
+  box-shadow: 0 4px 16px rgba(124, 58, 237, 0.08);
 }
 
 .form-group {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.8rem;
 }
 
 .form-group label {
-    font-weight: bold;
-    color: #444;
+  font-weight: 600;
+  color: #4c1d95;
+  font-size: 1.1rem;
+}
+
+.form-group input[type="text"],
+.form-group input[type="number"] {
+  padding: 0.8rem 1rem;
+  border: 2px solid rgba(124, 58, 237, 0.2);
+  border-radius: 8px;
+  font-size: 1rem;
+  font-family: 'Outfit', sans-serif;
+  transition: all 0.3s ease;
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.form-group input[type="text"]:focus,
+.form-group input[type="number"]:focus {
+  outline: none;
+  border-color: #7c3aed;
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
+}
+
+.form-group input[type="file"] {
+  padding: 0.8rem;
+  border: 2px dashed rgba(124, 58, 237, 0.3);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.9);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.form-group input[type="file"]:hover {
+  border-color: #7c3aed;
+  background: rgba(124, 58, 237, 0.05);
 }
 
 .avatar-section {
@@ -196,75 +258,111 @@ h1 {
 }
 
 .avatar-preview {
-  width: 100px;
-  height: 100px;
+  width: 120px;
+  height: 120px;
   border-radius: 50%;
   object-fit: cover;
-  margin-bottom: 0.5rem;
-  border: 2px solid #ddd; /* Slightly thicker border */
+  border: 3px solid #7c3aed;
+  box-shadow: 0 4px 16px rgba(124, 58, 237, 0.15);
+  margin-bottom: 1rem;
+  transition: transform 0.3s ease;
 }
 
-input[type="text"],
-input[type="number"],
-input[type="file"],
+.avatar-preview:hover {
+  transform: scale(1.05);
+}
+
 input[type="color"] {
-  padding: 0.75rem;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  font-size: 1rem;
-  transition: border-color 0.2s;
-}
-
-input[type="text"]:focus,
-input[type="number"]:focus,
-input[type="color"]:focus {
-    border-color: #4361ee;
-    outline: none;
-}
-
-input[type="file"] {
-    padding: 0.5rem; /* Adjust padding for file input */
-}
-
-.btn-primary {
-  padding: 0.8rem 1.5rem; /* Slightly larger button */
+  width: 50px;
+  height: 50px;
+  padding: 0;
   border: none;
-  border-radius: 4px;
-  font-size: 1rem;
-  font-weight: bold;
+  border-radius: 8px;
   cursor: pointer;
-  background-color: #4361ee;
-  color: white;
-  margin-top: 1rem;
-  transition: background-color 0.2s;
+  background: none;
 }
 
-.btn-primary:disabled {
-  background-color: #a0a0a0;
-  cursor: not-allowed;
+input[type="color"]::-webkit-color-swatch-wrapper {
+  padding: 0;
 }
 
-.btn-primary:hover:not(:disabled) {
-  background-color: #3a56d4;
+input[type="color"]::-webkit-color-swatch {
+  border: 2px solid rgba(124, 58, 237, 0.3);
+  border-radius: 8px;
 }
 
 .status-message {
-  padding: 0.75rem;
-  border-radius: 4px;
-  font-size: 0.9rem;
-  margin-top: 0.5rem;
+  padding: 1rem;
+  border-radius: 8px;
+  font-weight: 500;
   text-align: center;
+  margin-bottom: 1rem;
 }
 
-.success {
-  background-color: #e8f5e9;
-  color: #2e7d32;
-  border: 1px solid #c8e6c9;
+.status-message.success {
+  background: rgba(124, 58, 237, 0.1);
+  color: #4c1d95;
+  border: 1px solid rgba(124, 58, 237, 0.2);
 }
 
-.error {
-   background-color: #ffebee;
-   color: #c62828;
-   border: 1px solid #ffcdd2;
+.status-message.error {
+  background: rgba(236, 72, 153, 0.1);
+  color: #a21caf;
+  border: 1px solid rgba(236, 72, 153, 0.2);
+}
+
+.btn-primary {
+  background: linear-gradient(45deg, #8b5cf6, #7c3aed);
+  color: white;
+  padding: 1rem 2rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: 'Outfit', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: linear-gradient(45deg, #7c3aed, #8b5cf6);
+  box-shadow: 0 4px 16px rgba(124, 58, 237, 0.18);
+  transform: translateY(-2px);
+}
+
+.btn-primary:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+  .profile-container {
+    margin: 1.5rem;
+    padding: 1.5rem;
+  }
+
+  h1 {
+    font-size: 2rem;
+  }
+
+  h2 {
+    font-size: 1.5rem;
+  }
+
+  .profile-form {
+    padding: 1.5rem;
+}
+
+  .form-group input[type="text"],
+  .form-group input[type="number"] {
+    padding: 0.7rem;
+}
+
+  .avatar-preview {
+    width: 100px;
+    height: 100px;
+  }
 }
 </style>
